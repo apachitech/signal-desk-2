@@ -45,64 +45,78 @@ const state = {
 class SoundSynth {
     constructor() {
         this.ctx = null;
+        this.isUnlocked = false;
     }
 
-    init() {
-        if (!this.ctx) {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (AudioContext) {
-                this.ctx = new AudioContext();
+    unlock() {
+        try {
+            if (!this.ctx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    this.ctx = new AudioContext();
+                }
             }
-        }
-        if (this.ctx && this.ctx.state === 'suspended') {
-            this.ctx.resume();
-        }
+            if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume().then(() => {
+                    this.isUnlocked = true;
+                }).catch(() => {});
+            } else if (this.ctx && this.ctx.state === 'running') {
+                this.isUnlocked = true;
+            }
+        } catch (e) {}
     }
 
     playBuyChime() {
         if (!state.soundEnabled) return;
-        this.init();
-        if (!this.ctx) return;
+        if (!this.ctx || this.ctx.state !== 'running') return;
 
-        const now = this.ctx.currentTime;
-        [523.25, 659.25, 783.99].forEach((freq, i) => {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, now + i * 0.1);
-            gain.gain.setValueAtTime(0.001, now + i * 0.1);
-            gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.1 + 0.04);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.35);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start(now + i * 0.1);
-            osc.stop(now + i * 0.1 + 0.4);
-        });
+        try {
+            const now = this.ctx.currentTime;
+            [523.25, 659.25, 783.99].forEach((freq, i) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                gain.gain.setValueAtTime(0.001, now + i * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.1 + 0.04);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.35);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + i * 0.1);
+                osc.stop(now + i * 0.1 + 0.4);
+            });
+        } catch (e) {}
     }
 
     playSellChime() {
         if (!state.soundEnabled) return;
-        this.init();
-        if (!this.ctx) return;
+        if (!this.ctx || this.ctx.state !== 'running') return;
 
-        const now = this.ctx.currentTime;
-        [659.25, 523.25, 440.0].forEach((freq, i) => {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + i * 0.12);
-            gain.gain.setValueAtTime(0.001, now + i * 0.12);
-            gain.gain.exponentialRampToValueAtTime(0.22, now + i * 0.12 + 0.04);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.4);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start(now + i * 0.12);
-            osc.stop(now + i * 0.12 + 0.45);
-        });
+        try {
+            const now = this.ctx.currentTime;
+            [659.25, 523.25, 440.0].forEach((freq, i) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.12);
+                gain.gain.setValueAtTime(0.001, now + i * 0.12);
+                gain.gain.exponentialRampToValueAtTime(0.22, now + i * 0.12 + 0.04);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.4);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + i * 0.12);
+                osc.stop(now + i * 0.12 + 0.45);
+            });
+        } catch (e) {}
     }
 }
 
 const synth = new SoundSynth();
+
+// Unlock Web Audio API cleanly on user's first interaction without browser warning
+['click', 'touchstart', 'keydown'].forEach(evt => {
+    document.addEventListener(evt, () => synth.unlock(), { once: true, passive: true });
+});
 
 // ================= LIGHTWEIGHT CHARTS SETUP =================
 function initChart() {
@@ -592,12 +606,14 @@ async function fetchSignal(isBackground = false) {
         document.getElementById('chartTitle').textContent = `${state.asset} — ${state.timeframe} Candlestick Chart`;
         updateChartData(data.candles, data.indicators, data.signal.action, data.signal.entry ? data.signal.entry.entry_price : null);
 
-        // Sound trigger on action transition
+        // Sound trigger on action transition (suppress on cold initial page load)
         const action = data.signal.action;
-        if (action === 'BUY' && state.lastSignalAction !== 'BUY') {
-            synth.playBuyChime();
-        } else if (action === 'SELL' && state.lastSignalAction !== 'SELL') {
-            synth.playSellChime();
+        if (state.lastSignalAction !== null) {
+            if (action === 'BUY' && state.lastSignalAction !== 'BUY') {
+                synth.playBuyChime();
+            } else if (action === 'SELL' && state.lastSignalAction !== 'SELL') {
+                synth.playSellChime();
+            }
         }
         state.lastSignalAction = action;
 
@@ -1552,6 +1568,7 @@ function setupEventListeners() {
     // 6. Sound Toggle
     const soundBtn = document.getElementById('soundToggleBtn');
     soundBtn.addEventListener('click', () => {
+        synth.unlock();
         state.soundEnabled = !state.soundEnabled;
         document.getElementById('soundIcon').textContent = state.soundEnabled ? '🔔' : '🔕';
         soundBtn.style.opacity = state.soundEnabled ? '1.0' : '0.5';
