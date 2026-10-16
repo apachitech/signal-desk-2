@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalDesk — Institutional Confluence Trading Engine</title>
+    <meta name="description" content="Fast, confluence-based technical analysis trading signals with real-time moving averages, entry points, and risk tools.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- TradingView Lightweight Charts -->
+    <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Top Navigation Bar -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="brand-logo">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">Signal<span class="accent-text">Desk</span></span>
+                    <span class="badge-pro">PRO</span>
+                </div>
+                <div class="live-market-badge" id="liveStreamBadge">
+                    <span class="pulse-dot"></span>
+                    <span id="marketStatusText">LIVE REAL-TIME STREAMING</span>
+                </div>
+            </div>
+
+            <!-- Tab Switcher with Cursor Hover Dropdown Menus -->
+            <nav class="nav-tabs">
+                <!-- Dropdown 1: Live Terminal & Markets -->
+                <div class="nav-dropdown">
+                    <button class="nav-tab active" data-tab="tab-signal" id="tabBtnSignal">
+                        <span class="tab-icon">🎯</span> Live Terminal <span class="dropdown-chevron">▾</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-header">QUICK ASSET SELECT</div>
+                        <a href="javascript:void(0)" class="dropdown-item quick-asset-item" data-asset="EURUSD_OTC">
+                            <span class="item-icon">🟢</span>
+                            <div class="item-content">
+                                <span class="item-title">EUR/USD (OTC 24/7)</span>
+                                <span class="item-sub">Pocket Option Weekend Pair</span>
+                            </div>
+                        </a>
+                        <a href="javascript:void(0)" class="dropdown-item quick-asset-item" data-asset="XAUUSD_OTC">
+                            <span class="item-icon">🥇</span>
+                            <div class="item-content">
+                                <span class="item-title">Gold Spot (OTC 24/7)</span>
+                                <span class="item-sub">Pocket Option Weekend Gold</span>
+                            </div>
+                        </a>
+                        <a href="javascript:void(0)" class="dropdown-item quick-asset-item" data-asset="BTCUSDT">
+                            <span class="item-icon">🪙</span>
+                            <div class="item-content">
+                                <span class="item-title">BTC/USDT (Bitcoin)</span>
+                                <span class="item-sub">Binance Live High Liquidity</span>
+                            </div>
+                        </a>
+                        <a href="javascript:void(0)" class="dropdown-item quick-asset-item" data-asset="EURUSD">
+                            <span class="item-icon">💱</span>
+                            <div class="item-content">
+                                <span class="item-title">EUR/USD (Standard)</span>
+                                <span class="item-sub">Major Interbank Forex</span>
+                            </div>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpChart">
+                            <span class="item-icon">📈</span>
+                            <div class="item-content">
+                                <span class="item-title">Candlestick Chart</span>
+                                <span class="item-sub">TradingView multi-MA overlay</span>
+                            </div>
+                        </a>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpMAs">
+                            <span class="item-icon">📊</span>
+                            <div class="item-content">
+                                <span class="item-title">Moving Average Stack</span>
+                                <span class="item-sub">EMA 9, 21, 50, 200 alignments</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Dropdown 2: Strategy & Backtest -->
+                <div class="nav-dropdown">
+                    <button class="nav-tab" data-tab="tab-backtest" id="tabBtnBacktest">
+                        <span class="tab-icon">📊</span> Backtester <span class="dropdown-chevron">▾</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-header">STRATEGY SIMULATION</div>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navRunBacktest">
+                            <span class="item-icon">⚡</span>
+                            <div class="item-content">
+                                <span class="item-title">Run 1,000 Candle Simulation</span>
+                                <span class="item-sub">Test strategy with 85% payout math</span>
+                            </div>
+                        </a>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navRunAllAssets">
+                            <span class="item-icon">🌐</span>
+                            <div class="item-content">
+                                <span class="item-title">Scan Top 7 Assets</span>
+                                <span class="item-sub">Compare win-rate ranking across pairs</span>
+                            </div>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpTweaks">
+                            <span class="item-icon">⚙️</span>
+                            <div class="item-content">
+                                <span class="item-title">Parameter Optimization</span>
+                                <span class="item-sub">Threshold, EMAs, and RSI sliders</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Dropdown 3: Risk & Journal -->
+                <div class="nav-dropdown">
+                    <button class="nav-tab" data-tab="tab-risk" id="tabBtnRisk">
+                        <span class="tab-icon">🛡️</span> Risk & Journal <span class="dropdown-chevron">▾</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-header">CAPITAL PRESERVATION</div>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpStakeCalc">
+                            <span class="item-icon">🧮</span>
+                            <div class="item-content">
+                                <span class="item-title">Fixed Stake Calculator</span>
+                                <span class="item-sub">Calculate 1-2% account balance risk</span>
+                            </div>
+                        </a>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpCircuitBreaker">
+                            <span class="item-icon">🛑</span>
+                            <div class="item-content">
+                                <span class="item-title">Daily Circuit Breaker</span>
+                                <span class="item-sub">Consecutive loss limit & drawdown guard</span>
+                            </div>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navExportCsv">
+                            <span class="item-icon">💾</span>
+                            <div class="item-content">
+                                <span class="item-title">Export Journal (CSV)</span>
+                                <span class="item-sub">Download trading history file</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Dropdown 4: Pocket Option Guide -->
+                <div class="nav-dropdown">
+                    <button class="nav-tab" data-tab="tab-guide" id="tabBtnGuide">
+                        <span class="tab-icon">🎓</span> Pocket Option Guide <span class="dropdown-chevron">▾</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <div class="dropdown-header">EDUCATION & DRILL</div>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpTutorial">
+                            <span class="item-icon">📘</span>
+                            <div class="item-content">
+                                <span class="item-title">Beginner Platform Tutorial</span>
+                                <span class="item-sub">Layout, charts, order panel walkthrough</span>
+                            </div>
+                        </a>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpIndicatorSetup">
+                            <span class="item-icon">⚙️</span>
+                            <div class="item-content">
+                                <span class="item-title">Candle & Indicator Setup</span>
+                                <span class="item-sub">Exact settings for 1m, 5m, and 15m charts</span>
+                            </div>
+                        </a>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpDrill">
+                            <span class="item-icon">🎮</span>
+                            <div class="item-content">
+                                <span class="item-title">Interactive Practice Simulator</span>
+                                <span class="item-sub">Test execution on live simulated trade</span>
+                            </div>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpGoldenRules">
+                            <span class="item-icon">💡</span>
+                            <div class="item-content">
+                                <span class="item-title">5 Golden Rules for Beginners</span>
+                                <span class="item-sub">Avoid OTC traps & emotional chasing</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="header-right">
+                <!-- Live Market Clock & Timeframe Expiry -->
+                <div class="market-clock-widget" id="headerMarketClock" title="Live Wall-Clock (UTC) & Candle Close Timer">
+                    <div class="clock-badge">
+                        <span class="live-dot-pulse"></span>
+                        <span class="clock-label-text">UTC:</span>
+                        <span class="clock-value-text mono" id="headerClockTime">--:--:--</span>
+                    </div>
+                    <div class="timeframe-countdown-badge">
+                        <span class="countdown-label-text" id="headerTfLabel">5m CANDLE:</span>
+                        <span class="countdown-value-text mono highlight" id="headerCandleCountdown">00:00</span>
+                    </div>
+                </div>
+
+                <!-- Real-Time Auto-Stream Toggle -->
+                <div class="auto-refresh-container">
+                    <label class="switch-label" for="autoRefreshToggle" title="Continuous Real-Time Signal Updates">
+                        <span class="switch-text">Stream</span>
+                        <div class="switch">
+                            <input type="checkbox" id="autoRefreshToggle" checked>
+                            <span class="slider round"></span>
+                        </div>
+                    </label>
+                </div>
+                <!-- Sound Toggle -->
+                <button class="btn-icon" id="soundToggleBtn" title="Toggle Audio Alerts">
+                    <span id="soundIcon">🔔</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Risk Warning Banner (Conditional) -->
+        <div id="riskAlertBanner" class="alert-banner warning-banner hidden">
+            <div class="alert-content">
+                <span class="alert-icon">🛑</span>
+                <div class="alert-body">
+                    <strong id="alertBannerTitle">Daily Loss Limit Exceeded</strong>
+                    <span id="alertBannerMsg">You have reached your daily risk threshold. Step away from the charts to preserve capital.</span>
+                </div>
+            </div>
+            <button class="btn-dismiss" id="dismissAlertBtn">&times;</button>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- TAB 1: LIVE SIGNAL & CHART -->
+            <section id="tab-signal" class="tab-panel active">
+                <div class="control-strip card">
+                    <div class="control-group">
+                        <label class="control-label" for="assetSelect">Trading Asset</label>
+                        <div class="select-wrapper">
+                            <select id="assetSelect" class="styled-select">
+                                <optgroup label="Pocket Option 24/7 OTC Pairs (Weekend & Night)">
+                                    <option value="EURUSD_OTC">EUR/USD (OTC 24/7)</option>
+                                    <option value="GBPUSD_OTC">GBP/USD (OTC 24/7)</option>
+                                    <option value="USDJPY_OTC">USD/JPY (OTC 24/7)</option>
+                                    <option value="AUDUSD_OTC">AUD/USD (OTC 24/7)</option>
+                                    <option value="USDCAD_OTC">USD/CAD (OTC 24/7)</option>
+                                    <option value="USDCHF_OTC">USD/CHF (OTC 24/7)</option>
+                                    <option value="NZDUSD_OTC">NZD/USD (OTC 24/7)</option>
+                                    <option value="XAUUSD_OTC">XAU/USD Gold (OTC 24/7)</option>
+                                    <option value="BTCUSD_OTC">BTC/USD (OTC 24/7)</option>
+                                    <option value="ETHUSD_OTC">ETH/USD (OTC 24/7)</option>
+                                </optgroup>
+                                <optgroup label="Forex Major Pairs & Crosses">
+                                    <option value="EURUSD" selected>EUR/USD</option>
+                                    <option value="GBPUSD">GBP/USD</option>
+                                    <option value="USDJPY">USD/JPY</option>
+                                    <option value="AUDUSD">AUD/USD</option>
+                                    <option value="USDCAD">USD/CAD</option>
+                                    <option value="USDCHF">USD/CHF</option>
+                                    <option value="NZDUSD">NZD/USD</option>
+                                    <option value="EURJPY">EUR/JPY</option>
+                                    <option value="GBPJPY">GBP/JPY</option>
+                                </optgroup>
+                                <optgroup label="Crypto Assets (Binance Live)">
+                                    <option value="BTCUSDT">BTC/USDT (Bitcoin)</option>
+                                    <option value="ETHUSDT">ETH/USDT (Ethereum)</option>
+                                    <option value="SOLUSDT">SOL/USDT (Solana)</option>
+                                    <option value="BNBUSDT">BNB/USDT (Binance Coin)</option>
+                                    <option value="XRPUSDT">XRP/USDT (Ripple)</option>
+                                    <option value="DOGEUSDT">DOGE/USDT (Dogecoin)</option>
+                                    <option value="ADAUSDT">ADA/USDT (Cardano)</option>
+                                </optgroup>
+                                <optgroup label="Precious Metals & Commodities">
+                                    <option value="XAUUSD">XAU/USD (Gold Spot)</option>
+                                    <option value="XAGUSD">XAG/USD (Silver Spot)</option>
+                                    <option value="USOIL">USOIL (Crude Oil WTI)</option>
+                                </optgroup>
+                                <optgroup label="Major Global Indices">
+                                    <option value="SPX">SPX (S&P 500 Index)</option>
+                                    <option value="NDX">NDX (Nasdaq 100 Index)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Timeframe</label>
+                        <div class="timeframe-buttons" id="timeframeButtonGroup">
+                            <button class="btn-tf" data-tf="1m">1m</button>
+                            <button class="btn-tf active" data-tf="5m">5m</button>
+                            <button class="btn-tf" data-tf="15m">15m</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group action-group">
+                        <button id="getSignalBtn" class="btn-primary-action">
+                            <span class="btn-text">GET SIGNAL NOW</span>
+                            <span class="btn-spinner hidden" id="signalSpinner"></span>
+                        </button>
+                    </div>
+
+                    <div class="asset-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Live Market Price</span>
+                            <span class="meta-value mono" id="livePriceDisplay">--.----</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Expiry Rule</span>
+                            <span class="meta-value" id="expiryRuleDisplay">5 Min Expiry</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signal Output Section -->
+                <div class="signal-dashboard-grid">
+                    <!-- Big Signal Card -->
+                    <div class="signal-card card" id="signalCard">
+                        <div class="signal-card-header">
+                            <span class="card-caption">REAL-TIME MARKET SIGNAL</span>
+                            <span class="card-time" id="signalTimestamp">Streaming Live</span>
+                        </div>
+
+                        <div class="signal-hero">
+                            <div class="signal-badge-large wait" id="signalBadge">
+                                <span class="signal-action-text" id="signalActionText">ANALYZING</span>
+                            </div>
+                            
+                            <div class="confidence-container">
+                                <div class="confidence-circle" id="confidenceRing">
+                                    <svg viewBox="0 0 100 100">
+                                        <circle class="ring-bg" cx="50" cy="50" r="40"></circle>
+                                        <circle class="ring-fill" id="ringFill" cx="50" cy="50" r="40"></circle>
+                                    </svg>
+                                    <div class="ring-value">
+                                        <span id="confidenceValue" class="mono">--</span><span class="pct">%</span>
+                                    </div>
+                                </div>
+                                <span class="confidence-label">Signal Strength</span>
+                            </div>
+                        </div>
+
+                        <!-- ⏱️ REAL-TIME TIMEFRAME COUNTDOWN CLOCK -->
+                        <div class="candle-clock-panel" id="candleClockPanel">
+                            <!-- Countdown Mode Toggle Bar -->
+                            <div class="countdown-mode-bar">
+                                <button type="button" class="btn-mode-tab active" id="modeEntryTriggerBtn" data-mode="entry">
+                                    <span>🎯</span> Start at Entry Point (Timer Mode)
+                                </button>
+                                <button type="button" class="btn-mode-tab" id="modeCandleExpiryBtn" data-mode="candle">
+                                    <span>⏳</span> Fixed Candle Close (Clock Mode)
+                                </button>
+                            </div>
+
+                            <!-- Live Entry Trigger Status Banner -->
+                            <div class="entry-status-banner waiting" id="entryStatusBanner">
+                                <div class="entry-banner-left">
+                                    <span class="status-dot-pulse" id="entryStatusDot"></span>
+                                    <div>
+                                        <strong class="entry-status-heading" id="entryStatusHeading">WAITING FOR ENTRY POINT</strong>
+                                        <p class="entry-status-sub" id="entryStatusSub">Countdown triggers automatically when market touches the Optimal Zone</p>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-manual-trigger" id="manualTriggerTimerBtn" title="Click if you already clicked Call/Put on Pocket Option">
+                                    <span>⚡</span> Start Trade Timer Now
+                                </button>
+                            </div>
+
+                            <div class="clock-panel-top">
+                                <div class="clock-info-col">
+                                    <div class="clock-badge-live">
+                                        <span class="live-dot-pulse"></span>
+                                        <span class="clock-kpi-tag" id="clockKpiTag">READY FOR ENTRY</span>
+                                    </div>
+                                    <h4 class="clock-title" id="clockTitle">5m Trade Duration Timer</h4>
+                                    <p class="clock-subtitle" id="clockSubtitle">Full contract time once entry point is touched:</p>
+                                </div>
+                                
+                                <div class="clock-digital-box" id="clockDigitalBox">
+                                    <div class="digital-unit">
+                                        <span class="digit-number mono" id="clockMin">05</span>
+                                        <span class="digit-sub">MIN</span>
+                                    </div>
+                                    <span class="digit-sep">:</span>
+                                    <div class="digital-unit">
+                                        <span class="digit-number mono highlight" id="clockSec">00</span>
+                                        <span class="digit-sub">SEC</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Real-Time Progress Bar -->
+                            <div class="clock-progress-track">
+                                <div class="clock-progress-fill" id="clockProgressFill" style="width: 100%;"></div>
+                            </div>
+
+                            <div class="clock-panel-bottom">
+                                <span class="clock-metric">
+                                    <span class="clock-metric-label" id="clockMetricLbl1">Entry Target:</span>
+                                    <span class="clock-metric-val mono text-cyan" id="clockCandleOpenTime">--.----</span>
+                                </span>
+                                <span class="clock-metric">
+                                    <span class="clock-metric-label" id="clockMetricLbl2">Candle Expiry:</span>
+                                    <span class="clock-metric-val mono" id="clockCandleCloseTime">--:--:-- UTC</span>
+                                </span>
+                                <span class="clock-metric">
+                                    <span class="clock-metric-label">Engine Sync:</span>
+                                    <span class="clock-metric-val mono text-buy" id="clockSignalRefreshStatus">SYNCED LIVE</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- EXACT ENTRY POINT & TARGETS (Highlighted Section) -->
+                        <div class="entry-point-card" id="entryPointCard">
+                            <div class="entry-header">
+                                <span class="entry-title-badge">🎯 RECOMMENDED ENTRY POINT</span>
+                                <span class="entry-rr mono" id="entryRiskReward">R:R 1:1.5</span>
+                            </div>
+                            <div class="entry-main-row">
+                                <div class="entry-box">
+                                    <span class="entry-lbl">ENTRY PRICE</span>
+                                    <span class="entry-val mono highlight" id="entryPriceValue">--.----</span>
+                                </div>
+                                <div class="entry-box">
+                                    <span class="entry-lbl">OPTIMAL ZONE</span>
+                                    <span class="entry-val mono" id="entryZoneValue">--</span>
+                                </div>
+                                <div class="entry-box">
+                                    <span class="entry-lbl text-buy">TARGET (TP)</span>
+                                    <span class="entry-val mono text-buy" id="entryTargetValue">--.----</span>
+                                </div>
+                                <div class="entry-box">
+                                    <span class="entry-lbl text-sell">INVALIDATION (SL)</span>
+                                    <span class="entry-val mono text-sell" id="entryStopValue">--.----</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="signal-meta-row">
+                            <div class="meta-pill">
+                                <span class="pill-title">Suggested Expiry:</span>
+                                <span class="pill-value highlight" id="signalExpiryText">5 Minutes (Next Candle Close)</span>
+                            </div>
+                            <div class="meta-pill">
+                                <span class="pill-title">MA Trend Confluence:</span>
+                                <span class="pill-value mono" id="signalScoreText">Active</span>
+                            </div>
+                        </div>
+
+                        <div class="signal-reason-box">
+                            <span class="reason-icon">💡</span>
+                            <p class="reason-text" id="signalReasonText">Streaming technical confluence and live moving averages...</p>
+                        </div>
+
+                        <!-- Take Trade Quick Action -->
+                        <div class="trade-action-bar">
+                            <button id="quickTakeTradeBtn" class="btn-secondary" disabled>
+                                <span>➕</span> Log Trade at Entry Price
+                            </button>
+                            <span class="latency-stat" id="latencyStat">Latency: -- ms</span>
+                        </div>
+                    </div>
+
+                    <!-- Market Moving Averages Dashboard -->
+                    <div class="confluence-card card">
+                        <div class="confluence-header">
+                            <span class="card-caption">MARKET MOVING AVERAGES (TREND FILTER)</span>
+                            <span class="tag-live" id="maTrendTag">MA STACK</span>
+                        </div>
+
+                        <!-- Moving Average Status Grid -->
+                        <div class="ma-status-box" id="maStatusBox">
+                            <span class="ma-alignment-title" id="maAlignmentText">Analyzing Moving Average Stack...</span>
+                        </div>
+
+                        <div class="ma-cards-grid">
+                            <div class="ma-card">
+                                <div class="ma-card-top">
+                                    <span class="ma-name text-cyan">EMA 9 (Fast)</span>
+                                    <span class="ma-pill" id="pillEma9">--</span>
+                                </div>
+                                <span class="ma-price mono" id="valEma9">--.----</span>
+                            </div>
+
+                            <div class="ma-card">
+                                <div class="ma-card-top">
+                                    <span class="ma-name text-amber">EMA 21 (Pullback)</span>
+                                    <span class="ma-pill" id="pillEma21">--</span>
+                                </div>
+                                <span class="ma-price mono" id="valEma21">--.----</span>
+                            </div>
+
+                            <div class="ma-card">
+                                <div class="ma-card-top">
+                                    <span class="ma-name text-blue">EMA 50 (Mid Trend)</span>
+                                    <span class="ma-pill" id="pillEma50">--</span>
+                                </div>
+                                <span class="ma-price mono" id="valEma50">--.----</span>
+                            </div>
+
+                            <div class="ma-card">
+                                <div class="ma-card-top">
+                                    <span class="ma-name text-purple">EMA 200 (Macro)</span>
+                                    <span class="ma-pill" id="pillEma200">--</span>
+                                </div>
+                                <span class="ma-price mono" id="valEma200">--.----</span>
+                            </div>
+                        </div>
+
+                        <!-- Indicator Confluence Breakdown Meters -->
+                        <div class="indicators-matrix" style="margin-top: 0.5rem;">
+                            <div class="indicator-row" id="rowTrend">
+                                <div class="ind-info">
+                                    <span class="ind-name">MA Trend Force</span>
+                                    <span class="ind-detail">EMA 9/21/50 vs EMA 200</span>
+                                </div>
+                                <div class="ind-meter">
+                                    <div class="meter-bar-track">
+                                        <div class="meter-bar-fill" id="meterTrend"></div>
+                                    </div>
+                                </div>
+                                <span class="ind-score mono" id="scoreTrend">0.0</span>
+                            </div>
+
+                            <div class="indicator-row" id="rowMomentum">
+                                <div class="ind-info">
+                                    <span class="ind-name">Momentum Force</span>
+                                    <span class="ind-detail">MACD Histogram & RSI (14)</span>
+                                </div>
+                                <div class="ind-meter">
+                                    <div class="meter-bar-track">
+                                        <div class="meter-bar-fill" id="meterMomentum"></div>
+                                    </div>
+                                </div>
+                                <span class="ind-score mono" id="scoreMomentum">0.0</span>
+                            </div>
+
+                            <div class="indicator-row" id="rowVolatility">
+                                <div class="ind-info">
+                                    <span class="ind-name">Volatility / Bands</span>
+                                    <span class="ind-detail">Bollinger Bands & ATR</span>
+                                </div>
+                                <div class="ind-meter">
+                                    <div class="meter-bar-track">
+                                        <div class="meter-bar-fill" id="meterVolatility"></div>
+                                    </div>
+                                </div>
+                                <span class="ind-score mono" id="scoreVolatility">0.0</span>
+                            </div>
+                        </div>
+
+                        <!-- Technical Values Snapshot -->
+                        <div class="tech-values-grid">
+                            <div class="tech-cell">
+                                <span class="t-lbl">RSI (14)</span>
+                                <span class="t-val mono" id="tvRsi">--</span>
+                            </div>
+                            <div class="tech-cell">
+                                <span class="t-lbl">MACD Hist</span>
+                                <span class="t-val mono" id="tvMacdHist">--</span>
+                            </div>
+                            <div class="tech-cell">
+                                <span class="t-lbl">ATR Volatility</span>
+                                <span class="t-val mono" id="tvAtr">--</span>
+                            </div>
+                            <div class="tech-cell">
+                                <span class="t-lbl">Bollinger Mid</span>
+                                <span class="t-val mono" id="tvBbMid">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Candlestick Chart Container -->
+                <div class="chart-section card">
+                    <div class="chart-header">
+                        <div class="chart-title-group">
+                            <span class="chart-title" id="chartTitle">EURUSD — 5m Candlestick Chart</span>
+                            <div class="chart-legend">
+                                <span class="legend-item"><span class="legend-color ema-fast"></span>EMA 9</span>
+                                <span class="legend-item"><span class="legend-color ema-slow"></span>EMA 21</span>
+                                <span class="legend-item"><span class="legend-color ema-mid"></span>EMA 50</span>
+                                <span class="legend-item"><span class="legend-color ema-trend"></span>EMA 200</span>
+                                <span class="legend-item"><span class="legend-color bb-band"></span>Bollinger (20,2)</span>
+                            </div>
+                        </div>
+                        <div class="chart-tools">
+                            <button class="btn-chart-tool" id="resetChartBtn" title="Fit Content">⛶ Fit</button>
+                        </div>
+                    </div>
+                    <div id="tvChartContainer" class="chart-container"></div>
+                </div>
+            </section>
+
+            <!-- TAB 2: BACKTESTER -->
+            <section id="tab-backtest" class="tab-panel">
+                <div class="backtest-controls card">
+                    <div class="backtest-header-row">
+                        <div>
+                            <h2 class="section-title">Confluence Strategy Backtester</h2>
+                            <p class="section-subtitle">Simulate signals over the last 1,000+ historical candles with realistic 85% fixed-expiry payout logic.</p>
+                        </div>
+                        <div class="backtest-actions">
+                            <button id="runBacktestBtn" class="btn-primary-action">
+                                <span>⚡</span> Run Backtest (1000 Candles)
+                            </button>
+                            <button id="runAllAssetsBtn" class="btn-secondary">
+                                <span>🌐</span> Compare All 7 Assets
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Parameter Tweak Controls -->
+                    <div class="tweak-controls-grid">
+                        <div class="tweak-item">
+                            <label for="paramThreshold">Signal Threshold: <span id="paramThresholdVal" class="mono highlight">1.0</span></label>
+                            <input type="range" id="paramThreshold" min="0.5" max="2.5" step="0.1" value="1.0">
+                        </div>
+                        <div class="tweak-item">
+                            <label for="paramEmaFast">EMA Fast (9): <span id="paramEmaFastVal" class="mono highlight">9</span></label>
+                            <input type="range" id="paramEmaFast" min="5" max="15" step="1" value="9">
+                        </div>
+                        <div class="tweak-item">
+                            <label for="paramEmaSlow">EMA Slow (21): <span id="paramEmaSlowVal" class="mono highlight">21</span></label>
+                            <input type="range" id="paramEmaSlow" min="15" max="40" step="1" value="21">
+                        </div>
+                        <div class="tweak-item">
+                            <label for="paramRsiPeriod">RSI Period (14): <span id="paramRsiPeriodVal" class="mono highlight">14</span></label>
+                            <input type="range" id="paramRsiPeriod" min="7" max="21" step="1" value="14">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backtest Profitability Warning Banner -->
+                <div id="backtestWarningBanner" class="alert-banner warning-banner hidden">
+                    <div class="alert-content">
+                        <span class="alert-icon">⚠️</span>
+                        <div class="alert-body">
+                            <strong>Strategy Profitability Alert</strong>
+                            <span id="backtestWarningText">Win rate is below 56.0%. Strategy is not profitable at typical 85% payouts. Minimum 54.1% required to break even.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backtest Results KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card card">
+                        <span class="kpi-label">Win Rate</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value mono" id="btWinRate">--%</span>
+                            <span class="kpi-subtext" id="btWinLoss">-- W / -- L</span>
+                        </div>
+                        <div class="kpi-progress-bar">
+                            <div class="kpi-progress-fill" id="btWinRateBar"></div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card card">
+                        <span class="kpi-label">Total Signals Generated</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value mono" id="btTotalSignals">--</span>
+                            <span class="kpi-subtext" id="btCandlesCount">from 1,000 candles</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card card">
+                        <span class="kpi-label">Expected Net Profit (85% Payout)</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value mono" id="btNetProfit">$0.00</span>
+                            <span class="kpi-subtext" id="btRoi">ROI: 0.0%</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card card">
+                        <span class="kpi-label">Profit Factor & Max Drawdown</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value mono" id="btProfitFactor">--</span>
+                            <span class="kpi-subtext" id="btMaxLosses">Max Cons. Losses: --</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multi-Asset Breakdown Table -->
+                <div class="card table-card" id="multiAssetCard">
+                    <div class="table-header">
+                        <span class="card-caption">WIN RATE BREAKDOWN BY ASSET</span>
+                        <span class="table-note">Sorted by performance (85% Payout Simulation)</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="styled-table" id="assetBreakdownTable">
+                            <thead>
+                                <tr>
+                                    <th>Asset</th>
+                                    <th>Signals</th>
+                                    <th>Win Rate</th>
+                                    <th>Net PnL ($100 Stake)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assetBreakdownBody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Click "Compare All 7 Assets" to run full multi-asset scan.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Backtest Trades Log -->
+                <div class="card table-card">
+                    <div class="table-header">
+                        <span class="card-caption">RECENT BACKTEST TRADE LOG</span>
+                        <span class="table-note">Last 30 simulated trades</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="styled-table" id="btTradesTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Action</th>
+                                    <th>Confidence</th>
+                                    <th>Entry Price</th>
+                                    <th>Exit Price</th>
+                                    <th>Outcome</th>
+                                    <th>PnL ($)</th>
+                                    <th>Confluence Trigger</th>
+                                </tr>
+                            </thead>
+                            <tbody id="btTradesBody">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">Run a backtest to populate historical trades.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: RISK TOOLS & JOURNAL -->
+            <section id="tab-risk" class="tab-panel">
+                <div class="risk-grid">
+                    <!-- Fixed-Stake Risk Calculator -->
+                    <div class="card risk-card">
+                        <div class="card-header-styled">
+                            <span class="card-icon">🧮</span>
+                            <div>
+                                <h3 class="card-title">Fixed-Stake Risk Calculator</h3>
+                                <p class="card-desc">Calculate mathematical position size as 1-2% of total trading capital.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="accountBalanceInput">Account Balance ($)</label>
+                            <input type="number" id="accountBalanceInput" class="styled-input mono" value="10000" min="10" step="100">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Risk Per Trade: <span id="riskPctLabel" class="highlight mono">1.5%</span></label>
+                            <div class="risk-preset-buttons">
+                                <button class="btn-chip" data-risk="1.0">1.0% (Conservative)</button>
+                                <button class="btn-chip active" data-risk="1.5">1.5% (Recommended)</button>
+                                <button class="btn-chip" data-risk="2.0">2.0% (Aggressive)</button>
+                            </div>
+                            <input type="range" id="riskPctSlider" min="0.5" max="5.0" step="0.5" value="1.5">
+                        </div>
+
+                        <div class="calculator-result-box">
+                            <div class="calc-row">
+                                <span class="calc-label">Recommended Stake:</span>
+                                <span class="calc-value mono highlight" id="calcStakeAmount">$150.00</span>
+                            </div>
+                            <div class="calc-row">
+                                <span class="calc-label">Potential Win (+85%):</span>
+                                <span class="calc-value mono text-buy" id="calcPotentialWin">+$127.50</span>
+                            </div>
+                            <div class="calc-row">
+                                <span class="calc-label">Max Risk Per Trade:</span>
+                                <span class="calc-value mono text-sell" id="calcMaxRisk">-$150.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Loss Limits & Circuit Breaker -->
+                    <div class="card risk-card">
+                        <div class="card-header-styled">
+                            <span class="card-icon">🛑</span>
+                            <div>
+                                <h3 class="card-title">Daily Loss Circuit Breaker</h3>
+                                <p class="card-desc">Protect psychological capital. Enforce strict daily cut-off limits.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="maxLossCountInput">Max Consecutive Losses</label>
+                            <input type="number" id="maxLossCountInput" class="styled-input mono" value="3" min="1" max="10">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dailyLossPctInput">Max Daily Drawdown (% of balance)</label>
+                            <input type="number" id="dailyLossPctInput" class="styled-input mono" value="5.0" min="1.0" max="20.0" step="0.5">
+                        </div>
+
+                        <div class="daily-risk-status-box">
+                            <div class="status-indicator-row">
+                                <span>Consecutive Losses Today:</span>
+                                <span id="currentLossStreak" class="mono text-sell">0 / 3</span>
+                            </div>
+                            <div class="status-indicator-row">
+                                <span>Daily Realized Drawdown:</span>
+                                <span id="currentDailyDrawdown" class="mono">$0.00 (0.0%)</span>
+                            </div>
+                            <div class="circuit-status normal" id="circuitStatusBadge">
+                                <span>STATUS: ACTIVE & READY</span>
+                            </div>
+                        </div>
+
+                        <button id="resetDailyStatsBtn" class="btn-text-action">Reset Today's Loss Tracker</button>
+                    </div>
+                </div>
+
+                <!-- Trade Journal -->
+                <div class="card journal-card">
+                    <div class="journal-header">
+                        <div>
+                            <h3 class="card-title">Trading Journal & Log</h3>
+                            <p class="card-desc">Keep track of executed signals, trade outcomes, and discipline compliance.</p>
+                        </div>
+                        <div class="journal-actions">
+                            <button id="addManualTradeBtn" class="btn-secondary">
+                                <span>✏️</span> Add Trade
+                            </button>
+                            <button id="exportJournalCsvBtn" class="btn-secondary">
+                                <span>📥</span> Export CSV
+                            </button>
+                            <button id="clearJournalBtn" class="btn-text-action text-danger">
+                                Clear Journal
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="journal-summary-strip">
+                        <div class="j-stat">
+                            <span class="j-stat-lbl">Total Trades Logged</span>
+                            <span class="j-stat-val mono" id="jTotalTrades">0</span>
+                        </div>
+                        <div class="j-stat">
+                            <span class="j-stat-lbl">Realized Win Rate</span>
+                            <span class="j-stat-val mono" id="jWinRate">0.0%</span>
+                        </div>
+                        <div class="j-stat">
+                            <span class="j-stat-lbl">Net Realized PnL</span>
+                            <span class="j-stat-val mono" id="jNetPnl">$0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="styled-table" id="journalTable">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Asset</th>
+                                    <th>Action</th>
+                                    <th>Stake ($)</th>
+                                    <th>Entry Price</th>
+                                    <th>Exit Price</th>
+                                    <th>Result</th>
+                                    <th>Net PnL</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="journalTableBody">
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted">No journal entries yet. Log a signal from the Live tab or click "Add Trade".</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: BEGINNER GUIDE (POCKET OPTION QT) -->
+            <section id="tab-guide" class="tab-panel">
+                <!-- Guide Hero Banner -->
+                <div class="card guide-hero-card">
+                    <div class="guide-hero-content">
+                        <div class="guide-tag">BEGINNER TRADING MANUAL</div>
+                        <h2 class="guide-main-title">How to Trade with SignalDesk on Pocket Option QT (Quick Trading)</h2>
+                        <p class="guide-subtitle">
+                            Welcome! If you're new to trading, don't worry. This step-by-step visual tutorial explains exactly how to take the BUY / SELL signals and Moving Averages from SignalDesk and execute them on Pocket Option to grow your capital with discipline.
+                        </p>
+                    </div>
+                    <div class="guide-hero-badge">
+                        <span class="badge-icon">💡</span>
+                        <div class="badge-text">
+                            <strong>Golden Rule #1</strong>
+                            <span>Never risk more than 1% to 2% of your balance per trade.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Side-by-Side Visual Comparison Mockup -->
+                <div class="card sxs-card">
+                    <div class="sxs-header">
+                        <span class="card-caption">VISUAL CHEATSHEET: SIGNALDESK vs POCKET OPTION QT</span>
+                        <span class="table-note">See how each indicator maps directly to your Pocket Option screen</span>
+                    </div>
+
+                    <div class="sxs-grid">
+                        <!-- Left: SignalDesk Interface -->
+                        <div class="sxs-box sxs-signaldesk">
+                            <div class="sxs-box-title">
+                                <span>⚡ ON SIGNALDESK</span>
+                                <span class="tag-live">ANALYSIS</span>
+                            </div>
+                            <div class="sxs-item">
+                                <span class="sxs-lbl">1. Signal Badge</span>
+                                <div class="sxs-val highlight-green">BUY (Green) or SELL (Red)</div>
+                                <span class="sxs-hint">Indicates direction predicted by Moving Averages & Confluence.</span>
+                            </div>
+                            <div class="sxs-item">
+                                <span class="sxs-lbl">2. Recommended Entry Point</span>
+                                <div class="sxs-val mono">e.g. 1.12550 (Zone: 1.12546 - 1.12554)</div>
+                                <span class="sxs-hint">The ideal price level to click your trade. Don't chase if it moves far away.</span>
+                            </div>
+                            <div class="sxs-item">
+                                <span class="sxs-lbl">3. Suggested Expiry</span>
+                                <div class="sxs-val mono highlight">e.g. 5m (5 Minutes)</div>
+                                <span class="sxs-hint">Matches the timeframe of your chart (1m, 5m, or 15m).</span>
+                            </div>
+                            <div class="sxs-item">
+                                <span class="sxs-lbl">4. Market Moving Averages</span>
+                                <div class="sxs-val">EMA 9 > 21 > 50 > 200 (Bullish)</div>
+                                <span class="sxs-hint">Confirms trend health. Always trade in the direction of the EMA 200.</span>
+                            </div>
+                        </div>
+
+                        <!-- Directional Arrow Divider -->
+                        <div class="sxs-divider">
+                            <span class="arrow-trans">➔</span>
+                            <span class="transfer-lbl">EXECUTE</span>
+                        </div>
+
+                        <!-- Right: Pocket Option QT Interface -->
+                        <div class="sxs-box sxs-pocketoption">
+                            <div class="sxs-box-title">
+                                <span>📱 ON POCKET OPTION QT</span>
+                                <span class="tag-live po-tag">BROKER</span>
+                            </div>
+                            <div class="sxs-item">
+                                <span class="sxs-lbl">1. Select Instrument & Chart</span>
+                                <div class="sxs-val">EUR/USD (or same asset) on M5 chart</div>
+                                <span class="sxs-hint">Always verify the payout is at least 80% to 92%.</span>
+                            </div>
+                            <div class="sxs-item">
+                                <span class="sxs-lbl">2. Set Expiry Timer</span>
+                                <div class="sxs-val mono highlight">Timer: 00:05:00 (5 Minutes)</div>
+                                <span class="sxs-hint">In Pocket Option QT, set expiration to match the SignalDesk timeframe.</span>
+                            </div>
+                            <div class="sxs-item">
+                                <span class="sxs-lbl">3. Enter Fixed Stake</span>
+                                <div class="sxs-val mono">Amount: $10.00 (1% of $1,000)</div>
+                                <span class="sxs-hint">Use the SignalDesk Risk Calculator. Never guess your stake!</span>
+                            </div>
+                            <div class="sxs-item">
+                                <span class="sxs-lbl">4. Click Action Button</span>
+                                <div class="po-buttons-preview">
+                                    <div class="po-btn po-btn-call">
+                                        <span>▲ HIGHER / CALL</span>
+                                        <small>If SignalDesk shows BUY</small>
+                                    </div>
+                                    <div class="po-btn po-btn-put">
+                                        <span>▼ LOWER / PUT</span>
+                                        <small>If SignalDesk shows SELL</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5-Step Beginner Trading Walkthrough -->
+                <div class="guide-steps-grid">
+                    <!-- Step 1 -->
+                    <div class="card guide-step-card">
+                        <div class="step-num-badge">STEP 1</div>
+                        <h3 class="step-title">Match Asset & Timeframe</h3>
+                        <p class="step-text">
+                            Open SignalDesk and Pocket Option side by side (or split your screen). Select the <strong>same asset</strong> (e.g., EUR/USD or BTC/USDT) on both platforms. Set your Pocket Option chart to candles and pick the matching timeframe (<strong>5m</strong> is ideal for beginners because it filters out random market noise).
+                        </p>
+                        <div class="step-tip">
+                            <strong>💡 Pro Tip:</strong> Stick to pairs with high broker payouts (85%+). Never trade assets offering under 75% payout.
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="card guide-step-card">
+                        <div class="step-num-badge">STEP 2</div>
+                        <h3 class="step-title">Inspect the Moving Averages</h3>
+                        <p class="step-text">
+                            Before placing any trade, check the <strong>Market Moving Averages Dashboard</strong> on SignalDesk:
+                        </p>
+                        <ul class="step-checklist">
+                            <li><strong>EMA 200 (Purple):</strong> The macro trend. If price is above EMA 200, only take <strong>BUY (HIGHER)</strong> signals.</li>
+                            <li><strong>EMA 9 & 21:</strong> Short-term momentum. EMA 9 crossing above EMA 21 gives the fastest bullish push.</li>
+                            <li><strong>EMA 50:</strong> Intermediate dynamic support/resistance where price often bounces.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="card guide-step-card">
+                        <div class="step-num-badge">STEP 3</div>
+                        <h3 class="step-title">Wait for the Exact Entry Point</h3>
+                        <p class="step-text">
+                            When SignalDesk gives a <strong>BUY</strong> or <strong>SELL</strong> signal, notice the <strong>RECOMMENDED ENTRY POINT</strong> card. It shows the exact trigger price and the <strong>Optimal Entry Zone</strong>.
+                        </p>
+                        <p class="step-text">
+                            Wait for the price to touch the entry zone or the opening of the fresh candle. <em>Do not click if the price has already shot 20 pips in that direction</em>—patience is how professionals win!
+                        </p>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="card guide-step-card">
+                        <div class="step-num-badge">STEP 4</div>
+                        <h3 class="step-title">Execute on Pocket Option QT</h3>
+                        <p class="step-text">
+                            Once price is in your Entry Zone:
+                        </p>
+                        <div class="action-instructions">
+                            <div class="inst-row buy-inst">
+                                <strong>🟢 If Signal is BUY:</strong> Click the green <strong>"HIGHER" (CALL)</strong> button on Pocket Option. You win if price closes higher after 5 minutes.
+                            </div>
+                            <div class="inst-row sell-inst">
+                                <strong>🔴 If Signal is SELL:</strong> Click the red <strong>"LOWER" (PUT)</strong> button on Pocket Option. You win if price closes lower after 5 minutes.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="card guide-step-card">
+                        <div class="step-num-badge">STEP 5</div>
+                        <h3 class="step-title">Strict Risk & Discipline Rules</h3>
+                        <p class="step-text">
+                            Trading is a marathon, not a sprint. Follow these non-negotiable rules:
+                        </p>
+                        <ul class="step-checklist">
+                            <li><strong>Fixed Stake:</strong> Only risk 1% to 2% of your account balance per trade. (Use our Risk Calculator tab).</li>
+                            <li><strong>No Martingale:</strong> Never double your money after a loss! That is the fastest way to blow an account.</li>
+                            <li><strong>Circuit Breaker:</strong> If you lose 3 trades in a row, close Pocket Option immediately for the day. SignalDesk will show the red warning banner.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Step 6 -->
+                    <div class="card guide-step-card">
+                        <div class="step-num-badge">STEP 6</div>
+                        <h3 class="step-title">Log Trade in the Journal</h3>
+                        <p class="step-text">
+                            After your trade completes, click <strong>"Log Trade at Entry Price"</strong> on SignalDesk. Mark it as <strong>WIN</strong> or <strong>LOSS</strong>. Reviewing your win rate weekly will make you a disciplined, profitable trader!
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ⚙️ POCKET OPTION CANDLE & INDICATOR SETUP MASTERCLASS -->
+                <div class="card po-setup-card" id="poIndicatorSetupSection">
+                    <div class="po-setup-header">
+                        <div class="po-setup-title-group">
+                            <span class="card-caption">BROKER CONFIGURATION GUIDE</span>
+                            <h3 class="po-setup-title">How to Setup Candles & Indicators on Pocket Option QT</h3>
+                            <p class="po-setup-subtitle">
+                                Configure your Pocket Option chart to mirror SignalDesk's confluence engine with 100% precision. Choose your trading timeframe below to view the exact settings.
+                            </p>
+                        </div>
+                        <!-- Timeframe Selection Tabs for Setup Guide -->
+                        <div class="setup-tf-tabs" id="setupTfTabs">
+                            <button type="button" class="btn-setup-tf" data-stf="1m">1m Fast Scalp</button>
+                            <button type="button" class="btn-setup-tf active" data-stf="5m">5m Core Confluence (Recommended)</button>
+                            <button type="button" class="btn-setup-tf" data-stf="15m">15m Trend Wave</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Chart & Candles Setup Strip -->
+                    <div class="setup-candles-strip">
+                        <div class="setup-section-tag">STEP 1: CONFIGURE CANDLES & TIMEFRAME</div>
+                        <div class="setup-instruction-grid">
+                            <div class="setup-inst-item">
+                                <span class="inst-num">1</span>
+                                <div class="inst-content">
+                                    <strong>Chart Type:</strong>
+                                    <p>Click the Chart Type icon (top toolbar) $\rightarrow$ Select <strong>"Japanese Candlesticks"</strong> (green/red candles).</p>
+                                </div>
+                            </div>
+                            <div class="setup-inst-item">
+                                <span class="inst-num">2</span>
+                                <div class="inst-content">
+                                    <strong>Candle Timeframe:</strong>
+                                    <p>Select <strong id="setupCandleTfLabel" class="text-cyan">M5 (5 Minutes)</strong>. Toggle ON <strong>"Timer on Candles"</strong> to see seconds count down on the bar.</p>
+                                </div>
+                            </div>
+                            <div class="setup-inst-item">
+                                <span class="inst-num">3</span>
+                                <div class="inst-content">
+                                    <strong>Expiration Order Timer:</strong>
+                                    <p>In the right trade panel, set expiration to <strong id="setupExpiryTimerLabel" class="text-buy">Timer: 00:05:00</strong> (matches chart duration).</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Indicators Setup Grid -->
+                    <div class="setup-indicators-wrap">
+                        <div class="setup-section-tag">STEP 2: ADD INDICATORS ON POCKET OPTION</div>
+                        <p class="setup-indicators-desc">
+                            Click the <strong>Compass / Indicators</strong> icon in the top-left toolbar of Pocket Option and add these tools with the exact parameters:
+                        </p>
+
+                        <div class="indicators-spec-grid" id="indicatorsSpecGrid">
+                            <!-- EMA 9 -->
+                            <div class="ind-spec-card">
+                                <div class="ind-card-top">
+                                    <span class="ind-name text-cyan">EMA 9 (Fast Scalp)</span>
+                                    <span class="ind-type-badge">Moving Average</span>
+                                </div>
+                                <div class="ind-params">
+                                    <div class="param-row"><span>Type:</span> <strong>EMA</strong></div>
+                                    <div class="param-row"><span>Period:</span> <strong class="mono text-cyan" id="setupEmaFastVal">9</strong></div>
+                                    <div class="param-row"><span>Color:</span> <span class="color-chip" style="background:#00d4ff;"></span> Cyan (2px width)</div>
+                                </div>
+                                <p class="ind-role">Shows immediate micro-trend direction. Fastest trigger for entry confluence.</p>
+                            </div>
+
+                            <!-- EMA 21 -->
+                            <div class="ind-spec-card">
+                                <div class="ind-card-top">
+                                    <span class="ind-name text-amber">EMA 21 (Pullback Dynamic)</span>
+                                    <span class="ind-type-badge">Moving Average</span>
+                                </div>
+                                <div class="ind-params">
+                                    <div class="param-row"><span>Type:</span> <strong>EMA</strong></div>
+                                    <div class="param-row"><span>Period:</span> <strong class="mono text-amber" id="setupEmaSlowVal">21</strong></div>
+                                    <div class="param-row"><span>Color:</span> <span class="color-chip" style="background:#f59e0b;"></span> Amber / Orange (2px)</div>
+                                </div>
+                                <p class="ind-role">Your optimal entry pullback bounce line in trending markets.</p>
+                            </div>
+
+                            <!-- EMA 50 -->
+                            <div class="ind-spec-card">
+                                <div class="ind-card-top">
+                                    <span class="ind-name text-blue">EMA 50 (Mid-Trend Support)</span>
+                                    <span class="ind-type-badge">Moving Average</span>
+                                </div>
+                                <div class="ind-params">
+                                    <div class="param-row"><span>Type:</span> <strong>EMA</strong></div>
+                                    <div class="param-row"><span>Period:</span> <strong class="mono text-blue">50</strong></div>
+                                    <div class="param-row"><span>Color:</span> <span class="color-chip" style="background:#38bdf8;"></span> Sky Blue (2px)</div>
+                                </div>
+                                <p class="ind-role">Institutional pullback boundary where major swing continuations occur.</p>
+                            </div>
+
+                            <!-- EMA 200 -->
+                            <div class="ind-spec-card">
+                                <div class="ind-card-top">
+                                    <span class="ind-name text-purple">EMA 200 (Macro Baseline)</span>
+                                    <span class="ind-type-badge">Moving Average</span>
+                                </div>
+                                <div class="ind-params">
+                                    <div class="param-row"><span>Type:</span> <strong>EMA</strong></div>
+                                    <div class="param-row"><span>Period:</span> <strong class="mono text-purple">200</strong></div>
+                                    <div class="param-row"><span>Color:</span> <span class="color-chip" style="background:#a855f7;"></span> Purple (3px width)</div>
+                                </div>
+                                <p class="ind-role">The golden trend filter: Price > EMA 200 $\rightarrow$ CALL only. Price < EMA 200 $\rightarrow$ PUT only.</p>
+                            </div>
+
+                            <!-- RSI 14 -->
+                            <div class="ind-spec-card">
+                                <div class="ind-card-top">
+                                    <span class="ind-name text-green">RSI (Relative Strength)</span>
+                                    <span class="ind-type-badge">Oscillator</span>
+                                </div>
+                                <div class="ind-params">
+                                    <div class="param-row"><span>Period:</span> <strong class="mono" id="setupRsiVal">14</strong></div>
+                                    <div class="param-row"><span>Overbought:</span> <strong class="mono text-sell">70</strong></div>
+                                    <div class="param-row"><span>Oversold:</span> <strong class="mono text-buy">30</strong></div>
+                                </div>
+                                <p class="ind-role">Filters exhaustion: Never BUY when RSI > 70. Never SELL when RSI < 30.</p>
+                            </div>
+
+                            <!-- Bollinger Bands -->
+                            <div class="ind-spec-card">
+                                <div class="ind-card-top">
+                                    <span class="ind-name text-cyan">Bollinger Bands (20, 2)</span>
+                                    <span class="ind-type-badge">Volatility</span>
+                                </div>
+                                <div class="ind-params">
+                                    <div class="param-row"><span>Period:</span> <strong class="mono">20</strong></div>
+                                    <div class="param-row"><span>Deviation:</span> <strong class="mono">2.0</strong></div>
+                                    <div class="param-row"><span>MA Type:</span> <strong>SMA</strong></div>
+                                </div>
+                                <p class="ind-role">Detects compression squeezes before breakout momentum occurs.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeframe Specific Cheat Sheet Box -->
+                    <div class="setup-tf-summary-box" id="setupTfSummaryBox">
+                        <div class="tf-summary-header">
+                            <span class="tf-icon" id="setupTfIcon">⭐</span>
+                            <div>
+                                <h4 class="tf-summary-title" id="setupTfSummaryTitle">5-Minute Timeframe (M5) — Recommended for All Beginners</h4>
+                                <p class="tf-summary-text" id="setupTfSummaryText">
+                                    The 5m timeframe is the "sweet spot" for binary options trading on Pocket Option. It filters out random micro-ticks while delivering 65% to 75% win rates on aligned EMA trends.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="tf-summary-rules" id="setupTfRulesList">
+                            <div class="tf-rule-item">✅ <strong>Candle setting on Pocket Option:</strong> M5 (5 minutes)</div>
+                            <div class="tf-rule-item">✅ <strong>Trade Timer on Pocket Option:</strong> 00:05:00 (5 minutes duration)</div>
+                            <div class="tf-rule-item">✅ <strong>Golden Rule:</strong> Wait for price to touch the SignalDesk Entry Zone (near EMA 9 or 21) before clicking CALL/PUT!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Pocket Option Practice Simulator -->
+                <div class="card simulator-card">
+                    <div class="sim-header">
+                        <div>
+                            <span class="card-caption">INTERACTIVE BEGINNER DRILL</span>
+                            <h3 class="sim-title">Test Your Pocket Option Execution Reflexes</h3>
+                            <p class="sim-desc">Read the practice scenario generated below and click the correct Pocket Option button to test your understanding!</p>
+                        </div>
+                        <button id="simNextScenarioBtn" class="btn-secondary">
+                            <span>🔄</span> New Practice Scenario
+                        </button>
+                    </div>
+
+                    <div class="sim-scenario-box" id="simScenarioBox">
+                        <div class="scenario-details">
+                            <span class="scen-badge" id="simAsset">EUR/USD (5m Timeframe)</span>
+                            <div class="scen-market-info">
+                                <span class="scen-signal text-buy" id="simSignalText">BUY SIGNAL (Strength 88%)</span>
+                                <span class="scen-ma" id="simMaText">Price (1.12550) is ABOVE EMA 9, 21, and 200 (Bullish Stack)</span>
+                                <span class="scen-entry" id="simEntryText">Recommended Entry: 1.12550 | Optimal Zone: 1.12546 - 1.12554</span>
+                            </div>
+                        </div>
+
+                        <div class="sim-interactive-buttons">
+                            <button class="sim-btn sim-btn-call" id="simCallBtn">
+                                <span class="sim-btn-icon">▲</span>
+                                <div class="sim-btn-text">
+                                    <strong>HIGHER / CALL</strong>
+                                    <small>Green Button (Pocket Option)</small>
+                                </div>
+                            </button>
+                            <button class="sim-btn sim-btn-put" id="simPutBtn">
+                                <span class="sim-btn-icon">▼</span>
+                                <div class="sim-btn-text">
+                                    <strong>LOWER / PUT</strong>
+                                    <small>Red Button (Pocket Option)</small>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="sim-feedback-box hidden" id="simFeedbackBox">
+                        <span class="feedback-icon" id="simFeedbackIcon">🎉</span>
+                        <div class="feedback-text-wrap">
+                            <strong id="simFeedbackTitle">Correct Execution!</strong>
+                            <p id="simFeedbackMsg">You clicked HIGHER (CALL) because SignalDesk issued a BUY signal with price trending above all key Moving Averages.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Common Mistakes Checklist -->
+                <div class="card mistakes-card">
+                    <div class="table-header">
+                        <span class="card-caption">AVOID THESE 5 COMMON BEGINNER TRAPS</span>
+                    </div>
+                    <div class="mistakes-grid">
+                        <div class="mistake-item">
+                            <span class="m-icon">❌</span>
+                            <div>
+                                <strong>Trading Against EMA 200</strong>
+                                <p>Taking a CALL when the price is far below the EMA 200 is swimming against a waterfall. Always follow the macro trend.</p>
+                            </div>
+                        </div>
+                        <div class="mistake-item">
+                            <span class="m-icon">❌</span>
+                            <div>
+                                <strong>Over-Trading (Revenge Trading)</strong>
+                                <p>Placing 20 trades an hour out of boredom or frustration will drain your account. Quality signals beat quantity every time.</p>
+                            </div>
+                        </div>
+                        <div class="mistake-item">
+                            <span class="m-icon">❌</span>
+                            <div>
+                                <strong>Wrong Expiry Times</strong>
+                                <p>If you're reading a 5m chart on SignalDesk, don't set a 30-second expiry on Pocket Option! Match your expiry to the signal timeframe.</p>
+                            </div>
+                        </div>
+                        <div class="mistake-item">
+                            <span class="m-icon">❌</span>
+                            <div>
+                                <strong>Chasing Runaway Prices</strong>
+                                <p>If price has already spiked 15 pips in the direction of the signal, wait for a minor pullback to the entry zone before entering.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Mandatory Risk Disclaimer Footer -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <span class="disclaimer-badge">RISK DISCLOSURE</span>
+                <p class="disclaimer-text">
+                    Signals are probabilistic, not guaranteed. Trading involves risk of loss. Past performance does not guarantee future results.
+                </p>
+                <span class="version-tag">SignalDesk v1.1.0 Pro</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Manual Trade Modal -->
+    <div id="tradeModal" class="modal-overlay hidden">
+        <div class="modal-card card">
+            <div class="modal-header">
+                <h3>Log Trade to Journal</h3>
+                <button class="btn-close-modal" id="closeModalBtn">&times;</button>
+            </div>
+            <form id="tradeForm" class="modal-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mAsset">Asset</label>
+                        <select id="mAsset" class="styled-select">
+                            <optgroup label="Pocket Option 24/7 OTC Pairs">
+                                <option value="EURUSD_OTC">EUR/USD (OTC 24/7)</option>
+                                <option value="GBPUSD_OTC">GBP/USD (OTC 24/7)</option>
+                                <option value="USDJPY_OTC">USD/JPY (OTC 24/7)</option>
+                                <option value="AUDUSD_OTC">AUD/USD (OTC 24/7)</option>
+                                <option value="USDCAD_OTC">USD/CAD (OTC 24/7)</option>
+                                <option value="USDCHF_OTC">USD/CHF (OTC 24/7)</option>
+                                <option value="NZDUSD_OTC">NZD/USD (OTC 24/7)</option>
+                                <option value="XAUUSD_OTC">XAU/USD Gold (OTC 24/7)</option>
+                                <option value="BTCUSD_OTC">BTC/USD (OTC 24/7)</option>
+                                <option value="ETHUSD_OTC">ETH/USD (OTC 24/7)</option>
+                            </optgroup>
+                            <optgroup label="Standard Liquid Assets">
+                                <option value="EURUSD">EUR/USD</option>
+                                <option value="GBPUSD">GBP/USD</option>
+                                <option value="USDJPY">USD/JPY</option>
+                                <option value="AUDUSD">AUD/USD</option>
+                                <option value="USDCAD">USD/CAD</option>
+                                <option value="USDCHF">USD/CHF</option>
+                                <option value="NZDUSD">NZD/USD</option>
+                                <option value="EURJPY">EUR/JPY</option>
+                                <option value="GBPJPY">GBP/JPY</option>
+                                <option value="BTCUSDT">BTC/USDT</option>
+                                <option value="ETHUSDT">ETH/USDT</option>
+                                <option value="SOLUSDT">SOL/USDT</option>
+                                <option value="BNBUSDT">BNB/USDT</option>
+                                <option value="XRPUSDT">XRP/USDT</option>
+                                <option value="DOGEUSDT">DOGE/USDT</option>
+                                <option value="ADAUSDT">ADA/USDT</option>
+                                <option value="XAUUSD">XAU/USD (Gold)</option>
+                                <option value="XAGUSD">XAG/USD (Silver)</option>
+                                <option value="USOIL">USOIL (Crude Oil)</option>
+                                <option value="SPX">SPX (S&P 500)</option>
+                                <option value="NDX">NDX (Nasdaq 100)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mAction">Action</label>
+                        <select id="mAction" class="styled-select">
+                            <option value="BUY">BUY</option>
+                            <option value="SELL">SELL</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mStake">Stake ($)</label>
+                        <input type="number" id="mStake" class="styled-input mono" value="100" min="1" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="mEntryPrice">Entry Price</label>
+                        <input type="number" id="mEntryPrice" class="styled-input mono" step="0.00001" placeholder="Entry price">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mResult">Result</label>
+                        <select id="mResult" class="styled-select">
+                            <option value="WIN">WIN (+85% payout)</option>
+                            <option value="LOSS">LOSS (-100%)</option>
+                            <option value="TIE">TIE / PUSH ($0)</option>
+                            <option value="PENDING">PENDING</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mExitPrice">Exit Price (Optional)</label>
+                        <input type="number" id="mExitPrice" class="styled-input mono" step="0.00001" placeholder="Exit price">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="mNotes">Notes</label>
+                    <input type="text" id="mNotes" class="styled-input" placeholder="Moving averages, confluence triggers">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelModalBtn">Cancel</button>
+                    <button type="submit" class="btn-primary-action">Save to Journal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
