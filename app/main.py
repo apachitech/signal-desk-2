@@ -160,11 +160,33 @@ async def run_backtest_all_assets_endpoint(req: BacktestRequest):
 # Mount static assets
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+elif (BASE_DIR / "public").exists():
+    app.mount("/static", StaticFiles(directory=str(BASE_DIR / "public")), name="static")
+
+
+@app.get("/api")
+@app.get("/api/")
+@app.get("/api/index.py")
+@app.get("/api/index")
+async def api_root():
+    return {
+        "status": "online",
+        "service": "SignalDesk API",
+        "version": "1.0.0",
+        "endpoints": {
+            "config": "/api/config",
+            "signal": "/api/signal",
+            "backtest": "/api/backtest",
+            "backtest_all": "/api/backtest-all"
+        }
+    }
 
 
 @app.get("/style.css")
 async def serve_style():
     f = STATIC_DIR / "style.css"
+    if not f.exists():
+        f = BASE_DIR / "public" / "style.css"
     if f.exists():
         return FileResponse(str(f), media_type="text/css")
     raise HTTPException(status_code=404, detail="style.css not found")
@@ -173,6 +195,8 @@ async def serve_style():
 @app.get("/app.js")
 async def serve_app_js():
     f = STATIC_DIR / "app.js"
+    if not f.exists():
+        f = BASE_DIR / "public" / "app.js"
     if f.exists():
         return FileResponse(str(f), media_type="application/javascript")
     raise HTTPException(status_code=404, detail="app.js not found")
@@ -181,7 +205,10 @@ async def serve_app_js():
 @app.get("/")
 async def serve_index():
     index_file = STATIC_DIR / "index.html"
+    if not index_file.exists():
+        index_file = BASE_DIR / "public" / "index.html"
     if index_file.exists():
         return FileResponse(str(index_file))
     return {"message": "SignalDesk Backend API Online. Please create frontend in static/."}
+
 
