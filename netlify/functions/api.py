@@ -10,4 +10,5 @@ from mangum import Mangum
 from app.main import app
 
 # Mangum translates Netlify/AWS Lambda events to ASGI and back
-handler = Mangum(app, lifespan="off")
+handler = Mangum(app, api_gateway_base_path="/.netlify/functions/api", lifespan="off")
+

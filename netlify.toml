@@ -1,9 +1,16 @@
 [build]
   publish = "static"
   functions = "netlify/functions"
+  command = "pip install -r requirements.txt"
 
 [build.environment]
   PYTHON_VERSION = "3.11"
+
+# Route /static/* paths directly to published root files (style.css, app.js)
+[[redirects]]
+  from = "/static/*"
+  to = "/:splat"
+  status = 200
 
 # Route API calls to the Mangum serverless function
 [[redirects]]
@@ -19,6 +26,7 @@
 
 # Route root and all remaining web pages to index.html
 [[redirects]]
-  from = "/"
+  from = "/*"
   to = "/index.html"
   status = 200
+

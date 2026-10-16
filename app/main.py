@@ -162,9 +162,26 @@ if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
+@app.get("/style.css")
+async def serve_style():
+    f = STATIC_DIR / "style.css"
+    if f.exists():
+        return FileResponse(str(f), media_type="text/css")
+    raise HTTPException(status_code=404, detail="style.css not found")
+
+
+@app.get("/app.js")
+async def serve_app_js():
+    f = STATIC_DIR / "app.js"
+    if f.exists():
+        return FileResponse(str(f), media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="app.js not found")
+
+
 @app.get("/")
 async def serve_index():
     index_file = STATIC_DIR / "index.html"
     if index_file.exists():
         return FileResponse(str(index_file))
     return {"message": "SignalDesk Backend API Online. Please create frontend in static/."}
+
