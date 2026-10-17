@@ -1391,24 +1391,22 @@ function setupEventListeners() {
 
     const openSideMenu = () => {
         if (sideDrawer) {
-            sideDrawer.classList.add('open');
+            sideDrawer.classList.add('open', 'active');
             sideDrawer.setAttribute('aria-hidden', 'false');
         }
         if (sideOverlay) {
             sideOverlay.classList.add('active');
         }
-        document.body.style.overflow = 'hidden';
     };
 
     const closeSideMenu = () => {
         if (sideDrawer) {
-            sideDrawer.classList.remove('open');
+            sideDrawer.classList.remove('open', 'active');
             sideDrawer.setAttribute('aria-hidden', 'true');
         }
         if (sideOverlay) {
             sideOverlay.classList.remove('active');
         }
-        document.body.style.overflow = '';
     };
 
     if (sideToggleBtn) sideToggleBtn.addEventListener('click', openSideMenu);
@@ -1417,7 +1415,7 @@ function setupEventListeners() {
     if (headerMoreToolsBtn) headerMoreToolsBtn.addEventListener('click', openSideMenu);
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && sideDrawer && sideDrawer.classList.contains('open')) {
+        if (e.key === 'Escape' && sideDrawer && (sideDrawer.classList.contains('open') || sideDrawer.classList.contains('active'))) {
             closeSideMenu();
         }
     });
