@@ -1382,12 +1382,58 @@ function exportJournalCsv() {
 
 // ================= EVENT LISTENERS & SETUP =================
 function setupEventListeners() {
-    // Tab Switch Helper
+    // Side Menu Drawer Elements & Handlers
+    const sideDrawer = document.getElementById('sideMenuDrawer');
+    const sideOverlay = document.getElementById('sideMenuOverlay');
+    const sideToggleBtn = document.getElementById('sideMenuToggleBtn');
+    const sideCloseBtn = document.getElementById('sideMenuCloseBtn');
+    const headerMoreToolsBtn = document.getElementById('headerMoreToolsBtn');
+
+    const openSideMenu = () => {
+        if (sideDrawer) {
+            sideDrawer.classList.add('open');
+            sideDrawer.setAttribute('aria-hidden', 'false');
+        }
+        if (sideOverlay) {
+            sideOverlay.classList.add('active');
+        }
+        document.body.style.overflow = 'hidden';
+    };
+
+    const closeSideMenu = () => {
+        if (sideDrawer) {
+            sideDrawer.classList.remove('open');
+            sideDrawer.setAttribute('aria-hidden', 'true');
+        }
+        if (sideOverlay) {
+            sideOverlay.classList.remove('active');
+        }
+        document.body.style.overflow = '';
+    };
+
+    if (sideToggleBtn) sideToggleBtn.addEventListener('click', openSideMenu);
+    if (sideCloseBtn) sideCloseBtn.addEventListener('click', closeSideMenu);
+    if (sideOverlay) sideOverlay.addEventListener('click', closeSideMenu);
+    if (headerMoreToolsBtn) headerMoreToolsBtn.addEventListener('click', openSideMenu);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sideDrawer && sideDrawer.classList.contains('open')) {
+            closeSideMenu();
+        }
+    });
+
+    // Tab Switch Helper (Synchronizes header tabs and side menu items)
     const switchTab = (tabId) => {
         document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.side-nav-item').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
         const tabBtn = document.querySelector(`.nav-tab[data-tab="${tabId}"]`);
         if (tabBtn) tabBtn.classList.add('active');
+
+        const sideBtn = document.querySelector(`.side-nav-item[data-tab="${tabId}"]`);
+        if (sideBtn) sideBtn.classList.add('active');
+
         const panel = document.getElementById(tabId);
         if (panel) panel.classList.add('active');
 
@@ -1402,7 +1448,7 @@ function setupEventListeners() {
         }
     };
 
-    // 1. Navigation Tabs
+    // 1. Navigation Tabs (Header)
     document.querySelectorAll('.nav-tab').forEach(btn => {
         btn.addEventListener('click', () => {
             const targetId = btn.getAttribute('data-tab');
@@ -1410,7 +1456,18 @@ function setupEventListeners() {
         });
     });
 
-    // 1b. Dropdown Quick Asset Select
+    // 1a. Side Navigation Drawer Items
+    document.querySelectorAll('.side-nav-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-tab');
+            if (targetId) {
+                switchTab(targetId);
+                closeSideMenu();
+            }
+        });
+    });
+
+    // 1b. Dropdown & Side Menu Quick Asset Select
     document.querySelectorAll('.quick-asset-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -1420,12 +1477,13 @@ function setupEventListeners() {
                 const select = document.getElementById('assetSelect');
                 if (select) select.value = asset;
                 switchTab('tab-signal');
+                closeSideMenu();
                 fetchSignal();
             }
         });
     });
 
-    // 1c. Dropdown Action Links
+    // 1c. Action Link Helper
     const bindClick = (id, fn) => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('click', (e) => {
@@ -1434,6 +1492,50 @@ function setupEventListeners() {
         });
     };
 
+    // Side Menu Jump Links
+    bindClick('sideJumpIndicatorSetup', () => {
+        switchTab('tab-guide');
+        closeSideMenu();
+        document.getElementById('poIndicatorSetupSection')?.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    bindClick('sideJumpTutorial', () => {
+        switchTab('tab-guide');
+        closeSideMenu();
+        document.getElementById('tab-guide')?.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    bindClick('sideJumpDrill', () => {
+        switchTab('tab-guide');
+        closeSideMenu();
+        document.getElementById('simFeedbackBox')?.parentElement?.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    bindClick('sideJumpGoldenRules', () => {
+        switchTab('tab-guide');
+        closeSideMenu();
+        document.querySelector('.guide-dos-donts')?.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    bindClick('sideJumpStakeCalc', () => {
+        switchTab('tab-risk');
+        closeSideMenu();
+        document.getElementById('accountBalanceInput')?.focus();
+    });
+
+    bindClick('sideJumpCircuitBreaker', () => {
+        switchTab('tab-risk');
+        closeSideMenu();
+        document.getElementById('circuitStatusBadge')?.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    bindClick('sideExportCsv', () => {
+        switchTab('tab-risk');
+        closeSideMenu();
+        exportJournalCsv();
+    });
+
+    // Header Links (if any exist)
     bindClick('navJumpChart', () => {
         switchTab('tab-signal');
         document.getElementById('tvChartContainer')?.scrollIntoView({ behavior: 'smooth' });

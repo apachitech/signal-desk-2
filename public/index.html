@@ -14,9 +14,130 @@
 </head>
 <body class="dark-theme">
     <div class="app-container">
+        <!-- Side Navigation Drawer & Backdrop -->
+        <div class="side-menu-overlay" id="sideMenuOverlay"></div>
+        <aside class="side-menu-drawer" id="sideMenuDrawer" aria-hidden="true">
+            <div class="side-menu-header">
+                <div class="side-menu-brand">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">Signal<span class="accent-text">Desk</span></span>
+                    <span class="badge-pro">PRO</span>
+                </div>
+                <button class="side-menu-close-btn" id="sideMenuCloseBtn" title="Close Menu (Esc)">&times;</button>
+            </div>
+
+            <div class="side-menu-content">
+                <!-- Platform Views -->
+                <div class="side-menu-section">
+                    <div class="side-menu-section-title">PLATFORM NAVIGATION</div>
+                    <button class="side-nav-item active" data-tab="tab-signal" id="sideNavTerminal">
+                        <span class="side-item-icon">🎯</span>
+                        <div class="side-item-text">
+                            <span class="side-item-name">Live Confluence Terminal</span>
+                            <span class="side-item-desc">24/7 OTC pairs, optimal entry zone & timer</span>
+                        </div>
+                        <span class="side-item-badge live">LIVE</span>
+                    </button>
+                    <button class="side-nav-item" data-tab="tab-backtest" id="sideNavBacktest">
+                        <span class="side-item-icon">📊</span>
+                        <div class="side-item-text">
+                            <span class="side-item-name">Strategy Backtester</span>
+                            <span class="side-item-desc">1,000 candle simulation & win rate</span>
+                        </div>
+                        <span class="side-item-badge">85% EDGE</span>
+                    </button>
+                    <button class="side-nav-item" data-tab="tab-risk" id="sideNavRisk">
+                        <span class="side-item-icon">🛡️</span>
+                        <div class="side-item-text">
+                            <span class="side-item-name">Risk Calculator & Journal</span>
+                            <span class="side-item-desc">Fixed stake calculator & circuit breaker</span>
+                        </div>
+                    </button>
+                    <button class="side-nav-item" data-tab="tab-guide" id="sideNavGuide">
+                        <span class="side-item-icon">🎓</span>
+                        <div class="side-item-text">
+                            <span class="side-item-name">Pocket Option Master Guide</span>
+                            <span class="side-item-desc">Candles, indicators & execution drills</span>
+                        </div>
+                        <span class="side-item-badge hot">HOT</span>
+                    </button>
+                </div>
+
+                <!-- Pocket Option Setup & Drills -->
+                <div class="side-menu-section">
+                    <div class="side-menu-section-title">POCKET OPTION SETUP & DRILLS</div>
+                    <a href="javascript:void(0)" class="side-sub-link" id="sideJumpIndicatorSetup">
+                        <span class="side-link-icon">⚙️</span>
+                        <span>Candle & Indicator Setup (1m, 5m, 15m)</span>
+                    </a>
+                    <a href="javascript:void(0)" class="side-sub-link" id="sideJumpTutorial">
+                        <span class="side-link-icon">📘</span>
+                        <span>Beginner Platform Tutorial</span>
+                    </a>
+                    <a href="javascript:void(0)" class="side-sub-link" id="sideJumpDrill">
+                        <span class="side-link-icon">🎮</span>
+                        <span>Interactive Practice Simulator</span>
+                    </a>
+                    <a href="javascript:void(0)" class="side-sub-link" id="sideJumpGoldenRules">
+                        <span class="side-link-icon">💡</span>
+                        <span>5 Golden Rules for Beginners</span>
+                    </a>
+                </div>
+
+                <!-- Capital Preservation -->
+                <div class="side-menu-section">
+                    <div class="side-menu-section-title">RISK & CAPITAL MANAGEMENT</div>
+                    <a href="javascript:void(0)" class="side-sub-link" id="sideJumpStakeCalc">
+                        <span class="side-link-icon">🧮</span>
+                        <span>Fixed Stake Calculator (1–2% Rule)</span>
+                    </a>
+                    <a href="javascript:void(0)" class="side-sub-link" id="sideJumpCircuitBreaker">
+                        <span class="side-link-icon">🛑</span>
+                        <span>Daily Loss Limit & Circuit Breaker</span>
+                    </a>
+                    <a href="javascript:void(0)" class="side-sub-link" id="sideExportCsv">
+                        <span class="side-link-icon">💾</span>
+                        <span>Export Trading Journal (CSV)</span>
+                    </a>
+                </div>
+
+                <!-- Quick 24/7 OTC Asset Selection -->
+                <div class="side-menu-section">
+                    <div class="side-menu-section-title">QUICK 24/7 OTC ASSETS</div>
+                    <div class="side-assets-grid">
+                        <button type="button" class="side-asset-chip quick-asset-item" data-asset="EURUSD_OTC">
+                            <span class="chip-dot dot-buy"></span> EUR/USD (OTC)
+                        </button>
+                        <button type="button" class="side-asset-chip quick-asset-item" data-asset="XAUUSD_OTC">
+                            <span class="chip-dot dot-gold"></span> Gold (OTC)
+                        </button>
+                        <button type="button" class="side-asset-chip quick-asset-item" data-asset="BTCUSDT">
+                            <span class="chip-dot dot-crypto"></span> BTC/USDT
+                        </button>
+                        <button type="button" class="side-asset-chip quick-asset-item" data-asset="EURUSD">
+                            <span class="chip-dot dot-standard"></span> EUR/USD (Std)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="side-menu-footer">
+                <div class="side-footer-status">
+                    <span class="pulse-dot"></span>
+                    <span>Confluence Engine Active</span>
+                </div>
+                <span class="mono" style="font-size: 0.72rem; color: var(--text-muted);">SignalDesk v2.4 PRO</span>
+            </div>
+        </aside>
+
         <!-- Top Navigation Bar -->
         <header class="app-header">
             <div class="header-left">
+                <!-- Side Menu Hamburger Toggle -->
+                <button class="btn-hamburger" id="sideMenuToggleBtn" aria-label="Toggle Side Menu" title="Open Navigation Menu & Tools">
+                    <span class="hamburger-icon">☰</span>
+                    <span class="hamburger-label">Menu</span>
+                </button>
                 <div class="brand-logo">
                     <span class="logo-icon">⚡</span>
                     <span class="logo-text">Signal<span class="accent-text">Desk</span></span>
@@ -24,167 +145,21 @@
                 </div>
                 <div class="live-market-badge" id="liveStreamBadge">
                     <span class="pulse-dot"></span>
-                    <span id="marketStatusText">LIVE REAL-TIME STREAMING</span>
+                    <span id="marketStatusText">LIVE STREAMING</span>
                 </div>
             </div>
 
-            <!-- Tab Switcher with Cursor Hover Dropdown Menus -->
+            <!-- Streamlined Primary Navigation Tabs -->
             <nav class="nav-tabs">
-                <!-- Dropdown 1: Live Terminal & Markets -->
-                <div class="nav-dropdown">
-                    <button class="nav-tab active" data-tab="tab-signal" id="tabBtnSignal">
-                        <span class="tab-icon">🎯</span> Live Terminal <span class="dropdown-chevron">▾</span>
-                    </button>
-                    <div class="dropdown-menu">
-                        <div class="dropdown-header">QUICK ASSET SELECT</div>
-                        <a href="javascript:void(0)" class="dropdown-item quick-asset-item" data-asset="EURUSD_OTC">
-                            <span class="item-icon">🟢</span>
-                            <div class="item-content">
-                                <span class="item-title">EUR/USD (OTC 24/7)</span>
-                                <span class="item-sub">Pocket Option Weekend Pair</span>
-                            </div>
-                        </a>
-                        <a href="javascript:void(0)" class="dropdown-item quick-asset-item" data-asset="XAUUSD_OTC">
-                            <span class="item-icon">🥇</span>
-                            <div class="item-content">
-                                <span class="item-title">Gold Spot (OTC 24/7)</span>
-                                <span class="item-sub">Pocket Option Weekend Gold</span>
-                            </div>
-                        </a>
-                        <a href="javascript:void(0)" class="dropdown-item quick-asset-item" data-asset="BTCUSDT">
-                            <span class="item-icon">🪙</span>
-                            <div class="item-content">
-                                <span class="item-title">BTC/USDT (Bitcoin)</span>
-                                <span class="item-sub">Binance Live High Liquidity</span>
-                            </div>
-                        </a>
-                        <a href="javascript:void(0)" class="dropdown-item quick-asset-item" data-asset="EURUSD">
-                            <span class="item-icon">💱</span>
-                            <div class="item-content">
-                                <span class="item-title">EUR/USD (Standard)</span>
-                                <span class="item-sub">Major Interbank Forex</span>
-                            </div>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpChart">
-                            <span class="item-icon">📈</span>
-                            <div class="item-content">
-                                <span class="item-title">Candlestick Chart</span>
-                                <span class="item-sub">TradingView multi-MA overlay</span>
-                            </div>
-                        </a>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpMAs">
-                            <span class="item-icon">📊</span>
-                            <div class="item-content">
-                                <span class="item-title">Moving Average Stack</span>
-                                <span class="item-sub">EMA 9, 21, 50, 200 alignments</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Dropdown 2: Strategy & Backtest -->
-                <div class="nav-dropdown">
-                    <button class="nav-tab" data-tab="tab-backtest" id="tabBtnBacktest">
-                        <span class="tab-icon">📊</span> Backtester <span class="dropdown-chevron">▾</span>
-                    </button>
-                    <div class="dropdown-menu">
-                        <div class="dropdown-header">STRATEGY SIMULATION</div>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navRunBacktest">
-                            <span class="item-icon">⚡</span>
-                            <div class="item-content">
-                                <span class="item-title">Run 1,000 Candle Simulation</span>
-                                <span class="item-sub">Test strategy with 85% payout math</span>
-                            </div>
-                        </a>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navRunAllAssets">
-                            <span class="item-icon">🌐</span>
-                            <div class="item-content">
-                                <span class="item-title">Scan Top 7 Assets</span>
-                                <span class="item-sub">Compare win-rate ranking across pairs</span>
-                            </div>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpTweaks">
-                            <span class="item-icon">⚙️</span>
-                            <div class="item-content">
-                                <span class="item-title">Parameter Optimization</span>
-                                <span class="item-sub">Threshold, EMAs, and RSI sliders</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Dropdown 3: Risk & Journal -->
-                <div class="nav-dropdown">
-                    <button class="nav-tab" data-tab="tab-risk" id="tabBtnRisk">
-                        <span class="tab-icon">🛡️</span> Risk & Journal <span class="dropdown-chevron">▾</span>
-                    </button>
-                    <div class="dropdown-menu">
-                        <div class="dropdown-header">CAPITAL PRESERVATION</div>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpStakeCalc">
-                            <span class="item-icon">🧮</span>
-                            <div class="item-content">
-                                <span class="item-title">Fixed Stake Calculator</span>
-                                <span class="item-sub">Calculate 1-2% account balance risk</span>
-                            </div>
-                        </a>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpCircuitBreaker">
-                            <span class="item-icon">🛑</span>
-                            <div class="item-content">
-                                <span class="item-title">Daily Circuit Breaker</span>
-                                <span class="item-sub">Consecutive loss limit & drawdown guard</span>
-                            </div>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navExportCsv">
-                            <span class="item-icon">💾</span>
-                            <div class="item-content">
-                                <span class="item-title">Export Journal (CSV)</span>
-                                <span class="item-sub">Download trading history file</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Dropdown 4: Pocket Option Guide -->
-                <div class="nav-dropdown">
-                    <button class="nav-tab" data-tab="tab-guide" id="tabBtnGuide">
-                        <span class="tab-icon">🎓</span> Pocket Option Guide <span class="dropdown-chevron">▾</span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right">
-                        <div class="dropdown-header">EDUCATION & DRILL</div>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpTutorial">
-                            <span class="item-icon">📘</span>
-                            <div class="item-content">
-                                <span class="item-title">Beginner Platform Tutorial</span>
-                                <span class="item-sub">Layout, charts, order panel walkthrough</span>
-                            </div>
-                        </a>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpIndicatorSetup">
-                            <span class="item-icon">⚙️</span>
-                            <div class="item-content">
-                                <span class="item-title">Candle & Indicator Setup</span>
-                                <span class="item-sub">Exact settings for 1m, 5m, and 15m charts</span>
-                            </div>
-                        </a>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpDrill">
-                            <span class="item-icon">🎮</span>
-                            <div class="item-content">
-                                <span class="item-title">Interactive Practice Simulator</span>
-                                <span class="item-sub">Test execution on live simulated trade</span>
-                            </div>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="javascript:void(0)" class="dropdown-item" id="navJumpGoldenRules">
-                            <span class="item-icon">💡</span>
-                            <div class="item-content">
-                                <span class="item-title">5 Golden Rules for Beginners</span>
-                                <span class="item-sub">Avoid OTC traps & emotional chasing</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+                <button class="nav-tab active" data-tab="tab-signal" id="tabBtnSignal">
+                    <span class="tab-icon">🎯</span> Live Terminal
+                </button>
+                <button class="nav-tab" data-tab="tab-backtest" id="tabBtnBacktest">
+                    <span class="tab-icon">📊</span> Backtester
+                </button>
+                <button class="nav-tab btn-open-more-tools" id="headerMoreToolsBtn" title="Open All Features, Risk & Setup Guides">
+                    <span class="tab-icon">✨</span> All Tools & Guides ▾
+                </button>
             </nav>
 
             <div class="header-right">
