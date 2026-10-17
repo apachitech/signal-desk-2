@@ -2831,7 +2831,7 @@ input:checked + .slider:before {
     }
 }
 
-/* ================= RESPONSIVE ================= */
+/* ================= RESPONSIVE DESIGN (TABLETS & MOBILE) ================= */
 @media (max-width: 1200px) {
     .control-strip {
         grid-template-columns: 1fr 1fr;
@@ -2850,44 +2850,386 @@ input:checked + .slider:before {
     }
 }
 
+@media (max-width: 992px) {
+    .brand-logo .logo-text {
+        font-size: 1.2rem;
+    }
+    .live-market-badge {
+        font-size: 0.68rem;
+        padding: 3px 6px;
+    }
+}
+
+/* Tablets and Mobile Devices (<= 768px) */
 @media (max-width: 768px) {
+    /* Header Layout — Two sleek rows using flexbox order */
     .app-header {
-        flex-direction: column;
-        gap: 0.75rem;
-        padding: 0.75rem 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        padding: 0.55rem 0.85rem;
+        gap: 0.5rem;
+        background: rgba(11, 15, 25, 0.98);
     }
-    .header-left, .header-right {
+    
+    .header-left {
+        order: 1;
+        flex: 1 1 auto;
+        gap: 0.5rem;
+    }
+    
+    .header-right {
+        order: 2;
+        flex: 0 0 auto;
+        gap: 0.45rem;
+    }
+    
+    .nav-tabs {
+        order: 3;
         width: 100%;
-        justify-content: space-between;
+        display: flex;
+        margin-top: 0.15rem;
     }
+    
+    .nav-tab {
+        flex: 1;
+        justify-content: center;
+        padding: 0.5rem 0.25rem;
+        font-size: 0.82rem;
+        min-height: 38px;
+    }
+
+    /* Main Content */
     .main-content {
-        padding: 1rem;
+        padding: 0.85rem 0.75rem;
     }
+    
+    .card {
+        padding: 1rem 0.85rem;
+    }
+
+    /* Control Strip */
     .control-strip {
         grid-template-columns: 1fr;
+        gap: 0.85rem;
+        margin-bottom: 1rem;
     }
+    
+    .select-wrapper select,
+    .styled-select {
+        height: 44px;
+    }
+    
+    .timeframe-buttons {
+        height: 42px;
+    }
+    
+    .btn-tf {
+        font-size: 0.85rem;
+    }
+    
+    .btn-primary-action {
+        width: 100%;
+        height: 48px;
+        font-size: 1rem;
+    }
+    
+    .asset-meta {
+        display: flex;
+        justify-content: space-between;
+        background: var(--bg-input);
+        padding: 0.65rem 0.85rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        gap: 1rem;
+    }
+    
+    .meta-item {
+        text-align: left;
+    }
+    
+    .meta-item:last-child {
+        text-align: right;
+    }
+
+    /* Signal Hero & Badge */
+    .signal-dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
     .signal-hero {
         flex-direction: column;
+        align-items: center;
+        gap: 1rem;
     }
+    
     .signal-badge-large {
         width: 100%;
+        min-width: unset;
+        padding: 1.15rem 0.85rem;
+        font-size: 1.75rem;
     }
+
+    /* Candle Clock Panel */
+    .candle-clock-panel {
+        padding: 0.85rem;
+    }
+    
+    .countdown-mode-bar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.35rem;
+    }
+    
+    .btn-mode-tab {
+        padding: 0.45rem 0.2rem;
+        font-size: 0.72rem;
+        justify-content: center;
+        min-height: 38px;
+    }
+    
+    .entry-status-banner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+        text-align: center;
+    }
+    
+    .entry-banner-left {
+        justify-content: center;
+    }
+    
+    .btn-manual-trigger {
+        width: 100%;
+        justify-content: center;
+        padding: 0.55rem;
+        font-size: 0.8rem;
+        min-height: 40px;
+    }
+    
+    .clock-panel-top {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        text-align: center;
+    }
+    
+    .clock-digital-box {
+        width: 100%;
+        max-width: 260px;
+        justify-content: center;
+    }
+
+    /* Chart Section */
+    .chart-section {
+        padding: 0.85rem;
+    }
+    
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .chart-legend {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+
+    /* Technical Indicator values */
     .tech-values-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
     }
+
+    /* Backtester */
+    .backtest-header-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .backtest-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .backtest-actions button {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+    }
+    
+    .tweak-controls-grid {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+    }
+    
+    .kpi-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+    
+    .kpi-value {
+        font-size: 1.35rem;
+    }
+
+    /* Tables */
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -0.5rem;
+        padding: 0 0.5rem;
+    }
+
+    /* Risk Tab */
+    .risk-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    /* Guide Tab */
+    .guide-hero-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        padding: 1.25rem 1rem;
+    }
+    
+    .guide-hero-badge {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .sxs-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .sxs-divider {
+        display: flex;
+        justify-content: center;
+        padding: 0.25rem 0;
+    }
+    
+    .arrow-trans {
+        transform: rotate(90deg);
+    }
+    
+    .guide-steps-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .sim-scenario-box {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .sim-interactive-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+    }
+    
+    .sim-btn {
+        padding: 0.75rem 0.5rem;
+        justify-content: center;
+        text-align: center;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-height: 48px;
+    }
+    
+    .mistakes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Footer */
+    .footer-content {
+        flex-direction: column;
+        gap: 0.65rem;
+        text-align: center;
+    }
+    
+    .disclaimer-text {
+        margin: 0;
+        font-size: 0.7rem;
+    }
+}
+
+/* Small Smartphone Viewports (<= 480px) */
+@media (max-width: 480px) {
+    .btn-hamburger .hamburger-label {
+        display: none;
+    }
+    
+    .btn-hamburger {
+        padding: 0.4rem 0.55rem;
+        min-width: 38px;
+        min-height: 38px;
+        justify-content: center;
+    }
+    
+    .brand-logo .logo-text {
+        font-size: 1.15rem;
+    }
+    
+    .live-market-badge span:not(.pulse-dot) {
+        display: none;
+    }
+    
+    .live-market-badge {
+        padding: 6px;
+    }
+    
+    #testSoundBtn {
+        display: none;
+    }
+    
+    .market-clock-widget .clock-badge {
+        display: none;
+    }
+    
+    .market-clock-widget {
+        padding: 2px 6px;
+    }
+    
+    .market-clock-widget .countdown-label-text {
+        display: none;
+    }
+    
+    .market-clock-widget .timeframe-countdown-badge::before {
+        content: "⏳ ";
+        font-size: 0.7rem;
+    }
+    
+    .side-menu-drawer {
+        width: 86vw;
+        max-width: 310px;
+    }
+    
+    .chart-container {
+        height: 270px;
+    }
+    
     .kpi-grid {
         grid-template-columns: 1fr;
     }
-    .tweak-controls-grid {
-        grid-template-columns: 1fr;
+    
+    .tech-values-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.35rem;
     }
-    .footer-content {
-        flex-direction: column;
-        gap: 0.5rem;
-        text-align: center;
-    }
-    .disclaimer-text {
-        margin: 0;
+    
+    .signal-badge-large {
+        font-size: 1.5rem;
+        padding: 0.85rem 0.5rem;
     }
 }
 
