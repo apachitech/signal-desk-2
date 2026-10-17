@@ -166,8 +166,6 @@ elif (BASE_DIR / "public").exists():
 
 @app.get("/api")
 @app.get("/api/")
-@app.get("/api/index.py")
-@app.get("/api/index")
 async def api_root():
     return {
         "status": "online",

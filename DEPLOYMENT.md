@@ -43,8 +43,8 @@ Choose the method that best fits your technical experience and budget:
    - **Root Directory:** `./`
    - **Build and Output Settings:** Leave default (Vercel reads `vercel.json` automatically).
 6. Click **Deploy**.
-7. In ~60 seconds, your site will be live at:
-   `https://signal-desk-yourname.vercel.app`
+7. In ~60 seconds, your site will be live:
+   - **Active Production URL:** [https://signal-desk-2-pi.vercel.app/](https://signal-desk-2-pi.vercel.app/)
 
 ### Option B: Deploy via Vercel CLI (From your Terminal)
 1. Install Vercel CLI globally (if you have Node.js):
