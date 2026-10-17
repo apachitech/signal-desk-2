@@ -45,77 +45,80 @@ const state = {
 class SoundSynth {
     constructor() {
         this.ctx = null;
-        this.isUnlocked = false;
     }
 
-    unlock() {
+    async getContext() {
         try {
             if (!this.ctx) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (AudioContext) {
-                    this.ctx = new AudioContext();
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) {
+                    this.ctx = new AudioCtx();
                 }
             }
             if (this.ctx && this.ctx.state === 'suspended') {
-                this.ctx.resume().then(() => {
-                    this.isUnlocked = true;
-                }).catch(() => {});
-            } else if (this.ctx && this.ctx.state === 'running') {
-                this.isUnlocked = true;
+                await this.ctx.resume();
             }
-        } catch (e) {}
+            return this.ctx;
+        } catch (e) {
+            console.warn('AudioContext init error:', e);
+            return null;
+        }
     }
 
-    playBuyChime() {
-        if (!state.soundEnabled) return;
-        if (!this.ctx || this.ctx.state !== 'running') return;
+    async playTone(freq, duration = 0.22, gainVal = 0.35, delay = 0, type = 'triangle') {
+        const ctx = await this.getContext();
+        if (!ctx) return;
 
         try {
-            const now = this.ctx.currentTime;
-            [523.25, 659.25, 783.99].forEach((freq, i) => {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(freq, now + i * 0.1);
-                gain.gain.setValueAtTime(0.001, now + i * 0.1);
-                gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.1 + 0.04);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.35);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now + i * 0.1);
-                osc.stop(now + i * 0.1 + 0.4);
-            });
-        } catch (e) {}
+            const now = ctx.currentTime + delay;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, now);
+
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.linearRampToValueAtTime(gainVal, now + 0.025);
+            gain.gain.linearRampToValueAtTime(0.0001, now + duration);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(now);
+            osc.stop(now + duration + 0.05);
+        } catch (err) {
+            console.warn('Tone play error:', err);
+        }
     }
 
-    playSellChime() {
+    async playBuyChime() {
         if (!state.soundEnabled) return;
-        if (!this.ctx || this.ctx.state !== 'running') return;
+        // Institutional Ascending Triple Triad: C5 (523Hz), E5 (659Hz), G5 (784Hz), C6 (1046Hz)
+        await this.playTone(523.25, 0.20, 0.35, 0.00, 'triangle');
+        await this.playTone(659.25, 0.20, 0.35, 0.08, 'triangle');
+        await this.playTone(783.99, 0.24, 0.40, 0.16, 'triangle');
+        await this.playTone(1046.50, 0.40, 0.45, 0.24, 'sine');
+    }
 
-        try {
-            const now = this.ctx.currentTime;
-            [659.25, 523.25, 440.0].forEach((freq, i) => {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, now + i * 0.12);
-                gain.gain.setValueAtTime(0.001, now + i * 0.12);
-                gain.gain.exponentialRampToValueAtTime(0.22, now + i * 0.12 + 0.04);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.4);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now + i * 0.12);
-                osc.stop(now + i * 0.12 + 0.45);
-            });
-        } catch (e) {}
+    async playSellChime() {
+        if (!state.soundEnabled) return;
+        // Institutional Descending Warning Triad: A5 (880Hz), F5 (698Hz), D5 (587Hz), A4 (440Hz)
+        await this.playTone(880.00, 0.20, 0.35, 0.00, 'sine');
+        await this.playTone(698.46, 0.20, 0.35, 0.08, 'sine');
+        await this.playTone(587.33, 0.24, 0.38, 0.16, 'sine');
+        await this.playTone(440.00, 0.40, 0.42, 0.24, 'triangle');
+    }
+
+    async playTestChime() {
+        await this.playBuyChime();
     }
 }
 
 const synth = new SoundSynth();
 
-// Unlock Web Audio API cleanly on user's first interaction without browser warning
+// Pre-warm AudioContext on user interaction so subsequent alert sounds fire instantly
 ['click', 'touchstart', 'keydown'].forEach(evt => {
-    document.addEventListener(evt, () => synth.unlock(), { once: true, passive: true });
+    document.addEventListener(evt, () => synth.getContext(), { once: true, passive: true });
 });
 
 // ================= LIGHTWEIGHT CHARTS SETUP =================
@@ -1494,6 +1497,7 @@ function setupEventListeners() {
     // 2. Asset Selector
     document.getElementById('assetSelect').addEventListener('change', (e) => {
         state.asset = e.target.value;
+        state.lastSignalAction = null;
         fetchSignal();
     });
 
@@ -1505,6 +1509,7 @@ function setupEventListeners() {
             state.timeframe = btn.getAttribute('data-tf');
             document.getElementById('expiryRuleDisplay').textContent = `${state.timeframe} Expiry`;
             updateRealTimeClockAndCountdown();
+            state.lastSignalAction = null;
             fetchSignal();
         });
     });
@@ -1547,6 +1552,7 @@ function setupEventListeners() {
 
     // 4. One Big GET SIGNAL Button
     document.getElementById('getSignalBtn').addEventListener('click', () => {
+        state.lastSignalAction = null;
         fetchSignal();
     });
 
@@ -1565,14 +1571,30 @@ function setupEventListeners() {
         }
     });
 
-    // 6. Sound Toggle
+    // 6. Sound Toggle & Test Audio
     const soundBtn = document.getElementById('soundToggleBtn');
-    soundBtn.addEventListener('click', () => {
-        synth.unlock();
-        state.soundEnabled = !state.soundEnabled;
-        document.getElementById('soundIcon').textContent = state.soundEnabled ? '🔔' : '🔕';
-        soundBtn.style.opacity = state.soundEnabled ? '1.0' : '0.5';
-    });
+    if (soundBtn) {
+        soundBtn.addEventListener('click', async () => {
+            state.soundEnabled = !state.soundEnabled;
+            document.getElementById('soundIcon').textContent = state.soundEnabled ? '🔔' : '🔕';
+            soundBtn.style.opacity = state.soundEnabled ? '1.0' : '0.5';
+            if (state.soundEnabled) {
+                await synth.playBuyChime();
+            }
+        });
+    }
+
+    const testSoundBtn = document.getElementById('testSoundBtn');
+    if (testSoundBtn) {
+        testSoundBtn.addEventListener('click', async () => {
+            state.soundEnabled = true;
+            if (soundBtn) {
+                soundBtn.style.opacity = '1.0';
+                document.getElementById('soundIcon').textContent = '🔔';
+            }
+            await synth.playBuyChime();
+        });
+    }
 
     // 7. Chart Reset Fit
     document.getElementById('resetChartBtn').addEventListener('click', () => {
