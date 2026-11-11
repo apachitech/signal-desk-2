@@ -266,7 +266,14 @@ TIMEFRAME_CONFIG = {
     }
 }
 
-# API Keys
+# API Keys & Bot Config
 TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "").strip()
 ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "").strip()
 CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "15"))
+
+# Telegram Live Alert Bot
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+
+# Quantitative Engine Settings
+MIN_ADX_THRESHOLD = float(os.getenv("MIN_ADX_THRESHOLD", "22.0"))

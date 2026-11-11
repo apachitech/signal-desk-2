@@ -12,8 +12,21 @@ from app.data_fetcher import get_candles
 from app.indicators import calculate_indicators, extract_chart_series
 from app.signal_engine import analyze_signal
 from app.backtester import run_full_backtest, run_all_assets_backtest
+from app.live_feed import start_live_feeds
+from app.telegram_bot import telegram_bot
 
-app = FastAPI(title="SignalDesk API", version="1.0.0")
+app = FastAPI(title="SignalDesk Quantitative Bot API", version="2.0.0")
+
+# Track sent alerts: asset_timeframe -> last_candle_time
+_SENT_ALERTS: Dict[str, int] = {}
+
+@app.on_event("startup")
+async def on_startup():
+    """Start persistent real-time WebSocket tick ingestion."""
+    try:
+        await start_live_feeds()
+    except Exception as e:
+        print(f"Warning: could not start background WebSocket feeds: {e}")
 
 # Enable CORS
 app.add_middleware(
@@ -98,6 +111,25 @@ async def get_live_signal(
 
         # Prepare candle data for Lightweight Charts (last 150-200 candles)
         chart_candles = candles[-150:] if len(candles) > 150 else candles
+        last_candle_time = int(candles[-1]["time"]) if candles else 0
+
+        # Automatic Telegram Signal Dispatch (Only once per candle for verified BUY / SELL)
+        action = signal_data.get("action")
+        alert_key = f"{asset}:{timeframe}"
+        if action in ["BUY", "SELL"] and telegram_bot.enabled:
+            if _SENT_ALERTS.get(alert_key) != last_candle_time:
+                _SENT_ALERTS[alert_key] = last_candle_time
+                entry_info = signal_data.get("entry", {})
+                await telegram_bot.send_signal(
+                    asset=asset,
+                    timeframe=timeframe,
+                    action=action,
+                    entry_price=entry_info.get("entry_price", signal_data.get("latest_price", 0.0)),
+                    optimal_zone=entry_info.get("optimal_zone", "--"),
+                    adx=float(signal_data.get("indicators", {}).get("adx", 20.0)),
+                    reason=signal_data.get("reason", ""),
+                    expiry_label=signal_data.get("expiry_label", f"{timeframe} Expiry")
+                )
 
         return {
             "success": True,
@@ -106,7 +138,7 @@ async def get_live_signal(
             "signal": signal_data,
             "candles": chart_candles,
             "indicators": chart_series,
-            "timestamp": int(candles[-1]["time"]) if candles else 0
+            "timestamp": last_candle_time
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Signal calculation error: {str(e)}")
@@ -155,6 +187,49 @@ async def run_backtest_all_assets_endpoint(req: BacktestRequest):
         return {"success": True, "data": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Multi-asset backtest failed: {str(e)}")
+
+
+@app.get("/api/bot/status")
+async def get_bot_status():
+    """Returns live quantitative bot status, feeds, and alert integrations."""
+    from app.live_feed import _WS_CANDLE_BUFFER
+    return {
+        "status": "online",
+        "engine": "Quantitative Confluence + ADX Chop Filter",
+        "chop_filter_threshold": 22.0,
+        "websocket_feed": {
+            "active_streams": list(_WS_CANDLE_BUFFER.keys()),
+            "total_buffers": len(_WS_CANDLE_BUFFER)
+        },
+        "telegram_integration": {
+            "configured": telegram_bot.enabled,
+            "chat_id_set": bool(telegram_bot.chat_id)
+        }
+    }
+
+
+@app.post("/api/telegram/test")
+async def test_telegram_alert():
+    """Dispatches a test verification alert to Telegram."""
+    if not telegram_bot.enabled:
+        return {
+            "success": False,
+            "message": "Telegram not configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env file."
+        }
+    sent = await telegram_bot.send_signal(
+        asset="BTCUSDT",
+        timeframe="5m",
+        action="BUY",
+        entry_price=84500.0,
+        optimal_zone="84480.0 - 84520.0",
+        adx=31.5,
+        reason="Test Alert: Quantitative Engine Confluence (ADX 31.5 + EMA 9/21 Dynamic Pullback).",
+        expiry_label="5 Minutes Expiry"
+    )
+    return {
+        "success": sent,
+        "message": "Test alert sent successfully to Telegram." if sent else "Failed to send alert to Telegram."
+    }
 
 
 # Mount static assets

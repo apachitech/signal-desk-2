@@ -19,6 +19,7 @@ from app.config import (
     ALPHA_VANTAGE_API_KEY,
     CACHE_TTL_SECONDS
 )
+from app.live_feed import get_ws_candles
 
 logger = logging.getLogger(__name__)
 
@@ -265,12 +266,17 @@ async def get_candles(asset: str, timeframe: str, limit: int = 200, force_refres
     cfg = ASSET_CONFIG[asset]
     candles = None
 
-    # 2. Handle OTC (Over-The-Counter) 24/7 binary options pairs
-    # OTC pairs operate on internal broker liquidity when traditional markets are closed on weekends.
+    # 1. First priority: Check real-time WebSocket tick buffer (<50ms latency)
+    if cfg["category"] == "crypto" and cfg.get("binance_symbol"):
+        ws_candles = get_ws_candles(cfg["binance_symbol"], timeframe, limit=limit)
+        if ws_candles and len(ws_candles) >= 30:
+            return ws_candles
+
+    # 2. Handle OTC (Over-The-Counter) broker pairs
     if cfg["category"] == "otc":
         candles = generate_synthetic_candles(asset, timeframe, count=max(limit, 350))
     elif cfg["category"] == "crypto" and cfg["binance_symbol"]:
-        # 3. Try Binance for crypto or gold fallback
+        # 3. Try Binance REST API for crypto or gold fallback
         candles = await fetch_binance_klines(cfg["binance_symbol"], timeframe, limit=max(limit, 300))
     elif asset == "XAUUSD":
         candles = await fetch_binance_klines("PAXGUSDT", timeframe, limit=max(limit, 300))

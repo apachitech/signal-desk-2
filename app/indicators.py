@@ -75,6 +75,23 @@ def calculate_indicators(candles: List[Dict[str, Any]], settings: Dict[str, Any]
     df["swing_high"] = high.shift(1).rolling(swing_lookback).max()
     df["swing_low"] = low.shift(1).rolling(swing_lookback).min()
 
+    # 7. ADX (Average Directional Index - Chop Filter)
+    adx_period = int(settings.get("adx_period", 14))
+    alpha = 1.0 / max(1, adx_period)
+    up_move = high - high.shift(1)
+    down_move = low.shift(1) - low
+
+    plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
+    minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
+
+    atr_smooth = tr.ewm(alpha=alpha, adjust=False).mean()
+    plus_di = 100 * (pd.Series(plus_dm, index=df.index).ewm(alpha=alpha, adjust=False).mean() / atr_smooth.replace(0, np.nan))
+    minus_di = 100 * (pd.Series(minus_dm, index=df.index).ewm(alpha=alpha, adjust=False).mean() / atr_smooth.replace(0, np.nan))
+    dx = 100 * ((plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan)).fillna(0)
+    df["plus_di"] = plus_di.fillna(0)
+    df["minus_di"] = minus_di.fillna(0)
+    df["adx"] = dx.ewm(alpha=alpha, adjust=False).mean().fillna(20.0)
+
     return df
 
 

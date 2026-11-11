@@ -1,6 +1,6 @@
 from typing import Dict, Any, Tuple
 import pandas as pd
-from app.config import TIMEFRAME_CONFIG, ASSET_CONFIG
+from app.config import TIMEFRAME_CONFIG, ASSET_CONFIG, MIN_ADX_THRESHOLD
 
 
 def analyze_signal(
@@ -62,6 +62,10 @@ def analyze_signal(
     bb_l = float(curr.get("bb_lower", price * 0.99))
     bb_m = float(curr.get("bb_mid", price))
     bb_w = float(curr.get("bb_width", 0.01))
+
+    adx = float(curr.get("adx", 20.0))
+    plus_di = float(curr.get("plus_di", 0.0))
+    minus_di = float(curr.get("minus_di", 0.0))
 
     atr = float(curr.get("atr", price * 0.001))
     if atr <= 0:
@@ -154,30 +158,28 @@ def analyze_signal(
     # 4. TOTAL CONFLUENCE SCORE
     total_score = trend_score + momentum_score + volatility_score
 
-    # Determine Action (Signals given at all times!)
-    if total_score >= 0.15:
+    # 5. STRICT CHOP FILTER & ACTION DETERMINATION
+    # Real quantitative trading preserves capital by emitting "WAIT" during sideways chop!
+    reasons_list = trend_reasons + momentum_reasons + volatility_reasons
+
+    if adx < MIN_ADX_THRESHOLD:
+        action = "WAIT"
+        confidence = 45
+        reason = f"Chop Filter Active: ADX at {adx:.1f} (< {MIN_ADX_THRESHOLD}). Market in sideways consolidation with no directional edge. Capital preserved."
+    elif total_score >= 1.0 and (bullish_ma_stack or (price > ema_s and ema_f > ema_s)) and (rsi >= 46 and rsi <= 72) and (plus_di >= minus_di):
         action = "BUY"
-        # Calibrate confidence (65% to 96%)
-        conf_ratio = min(1.0, max(0.0, (total_score - 0.15) / 2.5))
-        confidence = int(65 + (conf_ratio * 31))
-        reasons_list = trend_reasons + momentum_reasons + volatility_reasons
-        reason = f"Bullish MA & Momentum Signal: {', '.join(reasons_list[:2])}."
-    elif total_score <= -0.15:
+        conf_ratio = min(1.0, max(0.0, (total_score - 1.0) / 2.0))
+        confidence = int(72 + (conf_ratio * 24))
+        reason = f"Bullish Trend Confluence (ADX {adx:.1f}): {', '.join(reasons_list[:2])}."
+    elif total_score <= -1.0 and (bearish_ma_stack or (price < ema_s and ema_f < ema_s)) and (rsi <= 54 and rsi >= 28) and (minus_di >= plus_di):
         action = "SELL"
-        conf_ratio = min(1.0, max(0.0, (abs(total_score) - 0.15) / 2.5))
-        confidence = int(65 + (conf_ratio * 31))
-        reasons_list = trend_reasons + momentum_reasons + volatility_reasons
-        reason = f"Bearish MA & Momentum Signal: {', '.join(reasons_list[:2])}."
+        conf_ratio = min(1.0, max(0.0, (abs(total_score) - 1.0) / 2.0))
+        confidence = int(72 + (conf_ratio * 24))
+        reason = f"Bearish Trend Confluence (ADX {adx:.1f}): {', '.join(reasons_list[:2])}."
     else:
-        # Micro-bias fallback based on Price vs EMA 9
-        if price >= ema_f:
-            action = "BUY"
-            confidence = 58
-            reason = f"Micro-Bullish Entry: Price ({price:.{digits}f}) holding above fast EMA 9 ({ema_f:.{digits}f})."
-        else:
-            action = "SELL"
-            confidence = 58
-            reason = f"Micro-Bearish Entry: Price ({price:.{digits}f}) trading below fast EMA 9 ({ema_f:.{digits}f})."
+        action = "WAIT"
+        confidence = 50
+        reason = f"Standby: Awaiting clear EMA pullback alignment (ADX: {adx:.1f}, RSI: {rsi:.1f})."
 
     # 5. PRECISE ENTRY POINT, ZONES & TARGETS
     entry_price = round(price, digits)
@@ -236,6 +238,9 @@ def analyze_signal(
             "ema50": round(ema_m, digits),
             "ema200": round(ema_t, digits),
             "rsi": round(rsi, 2),
+            "adx": round(adx, 1),
+            "plus_di": round(plus_di, 1),
+            "minus_di": round(minus_di, 1),
             "macd": round(macd_line, digits),
             "macd_signal": round(macd_sig, digits),
             "macd_hist": round(macd_hist, digits),

@@ -597,7 +597,7 @@ async function fetchSignal(isBackground = false) {
         // Seamless client-side engine fallback if server is static (e.g. Netlify CDN)
         if (!data || !data.signal) {
             data = generateClientFallbackSignal(state.asset, state.timeframe, state.threshold);
-            document.getElementById('latencyStat').textContent = `Live Feed: 12 ms (Edge Synced)`;
+            document.getElementById('latencyStat').textContent = `Demo / Offline Mode`;
         } else {
             const latency = Math.round(performance.now() - startTime);
             document.getElementById('latencyStat').textContent = `Latency: ${latency} ms`;
@@ -766,6 +766,10 @@ function renderSignal(data) {
         document.getElementById('tvMacdHist').textContent = sig.indicators.macd_hist;
         document.getElementById('tvAtr').textContent = sig.indicators.atr;
         document.getElementById('tvBbMid').textContent = sig.indicators.bb_mid || sig.indicators.price;
+        const adxEl = document.getElementById('tvAdx');
+        if (adxEl) {
+            adxEl.textContent = sig.indicators.adx !== undefined ? sig.indicators.adx : '--';
+        }
     }
 }
 
