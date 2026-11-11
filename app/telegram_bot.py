@@ -73,3 +73,4 @@ class TelegramNotifier:
 
 # Singleton instance
 telegram_bot = TelegramNotifier()
+

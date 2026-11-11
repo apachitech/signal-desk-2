@@ -89,3 +89,4 @@ async def start_live_feeds():
     task = asyncio.create_task(feed.run())
     _ACTIVE_TASKS.append(task)
     return task
+

@@ -178,3 +178,4 @@ Follow this golden rule of quantitative trading: **Never risk real capital until
 | Check Bot & Feed Status | Open [http://127.0.0.1:8000/api/bot/status](http://127.0.0.1:8000/api/bot/status) |
 | Check Docker container logs | `docker-compose logs -f` |
 | Stop Docker bot | `docker-compose down` |
+
