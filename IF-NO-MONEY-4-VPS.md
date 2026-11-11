@@ -189,3 +189,4 @@ Use a **100% free Cloudflare Tunnel** or **ngrok**:
 
 ### What You Should Do Right Now:
 Do not let the lack of a VPS hold you back. Open PowerShell, run `python run.py`, trade your 2–3 hour session with real disciplined confluence signals, and let your trading profits fund your infrastructure upgrades later.
+
