@@ -15,29 +15,34 @@ _ACTIVE_TASKS: List[asyncio.Task] = []
 class BinanceWebSocketFeed:
     """
     Maintains persistent, real-time WebSocket tick connection with Binance.
-    Sub-100ms real market candle updates for cryptocurrencies & gold proxies.
+    Sub-100ms real market candle updates for cryptocurrencies.
+    Fails over gracefully with silent exponential backoff if regional ISP blocks Binance.
     """
     def __init__(self, symbols: List[str] = None, intervals: List[str] = None):
         self.symbols = [s.lower() for s in (symbols or ["btcusdt", "ethusdt", "solusdt"])]
-        self.intervals = intervals or ["1m", "5m", "15m"]
+        self.intervals = intervals or ["1m", "5m"]
         self.running = False
 
-    def _get_stream_url(self) -> str:
-        streams = []
+    def _get_stream_urls(self) -> List[str]:
+        urls = []
         for s in self.symbols:
             for tf in self.intervals:
-                streams.append(f"{s}@kline_{tf}")
-        stream_path = "/".join(streams)
-        return f"wss://stream.binance.com:9443/ws/{stream_path}"
+                urls.append(f"wss://stream.binance.com:9443/ws/{s}@kline_{tf}")
+        return urls
 
-    async def run(self):
-        self.running = True
-        url = self._get_stream_url()
+    async def _stream_worker(self, url: str):
+        backoff = 5
         while self.running:
             try:
-                logger.info(f"Connecting to Binance Stream: {len(self.symbols)} assets...")
-                async with websockets.connect(url, ping_interval=20, ping_timeout=15) as ws:
-                    logger.info("Binance WebSocket stream established successfully.")
+                async with websockets.connect(
+                    url,
+                    open_timeout=15,
+                    ping_interval=20,
+                    ping_timeout=20,
+                    user_agent_header="Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                ) as ws:
+                    logger.info(f"Connected to stream: {url.split('/')[-1]}")
+                    backoff = 5
                     while self.running:
                         raw = await ws.recv()
                         msg = json.loads(raw)
@@ -66,11 +71,23 @@ class BinanceWebSocketFeed:
                             else:
                                 buf.append(candle)
             except asyncio.CancelledError:
-                self.running = False
                 break
-            except Exception as e:
-                logger.warning(f"Binance WS connection error: {e}. Reconnecting in 3 seconds...")
-                await asyncio.sleep(3)
+            except Exception:
+                # Silent exponential backoff so terminal doesn't get flooded with errors
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 1.5, 60)
+
+    async def run(self):
+        self.running = True
+        urls = self._get_stream_urls()
+        logger.info(f"Starting {len(urls)} real-time feed workers...")
+        workers = [asyncio.create_task(self._stream_worker(u)) for u in urls]
+        try:
+            await asyncio.gather(*workers)
+        except asyncio.CancelledError:
+            self.running = False
+            for w in workers:
+                w.cancel()
 
 
 def get_ws_candles(symbol: str, timeframe: str, limit: int = 200) -> Optional[List[Dict]]:
@@ -84,8 +101,9 @@ def get_ws_candles(symbol: str, timeframe: str, limit: int = 200) -> Optional[Li
 
 async def start_live_feeds():
     """Startup task to initialize real-time WebSocket workers."""
-    supported_crypto = ["btcusdt", "ethusdt", "solusdt", "bnbusdt", "xrpusdt", "dogeusdt", "adausdt"]
-    feed = BinanceWebSocketFeed(supported_crypto, ["1m", "5m", "15m"])
+    # Start with top primary liquid pairs
+    supported_crypto = ["btcusdt", "ethusdt", "solusdt"]
+    feed = BinanceWebSocketFeed(supported_crypto, ["1m", "5m"])
     task = asyncio.create_task(feed.run())
     _ACTIVE_TASKS.append(task)
     return task
