@@ -19,14 +19,73 @@ app = FastAPI(title="SignalDesk Quantitative Bot API", version="2.0.0")
 
 # Track sent alerts: asset_timeframe -> last_candle_time
 _SENT_ALERTS: Dict[str, int] = {}
+_SCANNER_TASK: Optional[asyncio.Task] = None
+
+
+async def background_market_scanner():
+    """
+    Continuous background autonomous scanner.
+    Iterates over key high-liquidity assets every 15 seconds.
+    When a genuine BUY or SELL signal forms, dispatches it to Telegram immediately
+    without needing any user to be clicking on the website.
+    """
+    scan_assets = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "EURUSD", "GBPUSD"]
+    scan_timeframes = ["1m", "5m"]
+    await asyncio.sleep(5)  # Let feeds warm up
+    print("[*] Autonomous Background Market Scanner started! Scanning for trade confluence...")
+
+    while True:
+        try:
+            for asset in scan_assets:
+                for tf in scan_timeframes:
+                    try:
+                        candles = await get_candles(asset, tf, limit=150, force_refresh=False)
+                        if not candles or len(candles) < 30:
+                            continue
+
+                        df = calculate_indicators(candles, settings={"threshold": 2.0})
+                        sig = analyze_signal(df, asset, tf, settings={"threshold": 2.0})
+                        action = sig.get("action")
+                        last_candle_time = int(candles[-1]["time"])
+                        alert_key = f"{asset}:{tf}"
+
+                        if action in ["BUY", "SELL"] and telegram_bot.enabled:
+                            if _SENT_ALERTS.get(alert_key) != last_candle_time:
+                                _SENT_ALERTS[alert_key] = last_candle_time
+                                entry_info = sig.get("entry", {})
+                                await telegram_bot.send_signal(
+                                    asset=asset,
+                                    timeframe=tf,
+                                    action=action,
+                                    entry_price=entry_info.get("entry_price", sig.get("latest_price", 0.0)),
+                                    optimal_zone=entry_info.get("optimal_zone", "--"),
+                                    adx=float(sig.get("indicators", {}).get("adx", 20.0)),
+                                    reason=sig.get("reason", ""),
+                                    expiry_label=sig.get("expiry_label", f"{tf} Expiry")
+                                )
+                    except Exception as scan_err:
+                        pass
+                    await asyncio.sleep(0.5)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            pass
+        await asyncio.sleep(15)
+
 
 @app.on_event("startup")
 async def on_startup():
-    """Start persistent real-time WebSocket tick ingestion."""
+    """Start persistent real-time WebSocket tick ingestion and autonomous scanner."""
+    global _SCANNER_TASK
     try:
         await start_live_feeds()
     except Exception as e:
         print(f"Warning: could not start background WebSocket feeds: {e}")
+
+    try:
+        _SCANNER_TASK = asyncio.create_task(background_market_scanner())
+    except Exception as e:
+        print(f"Warning: could not start background scanner: {e}")
 
 # Enable CORS
 app.add_middleware(
