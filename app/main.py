@@ -275,7 +275,7 @@ async def serve_app_js():
     raise HTTPException(status_code=404, detail="app.js not found")
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def serve_index():
     index_file = STATIC_DIR / "index.html"
     if not index_file.exists():
