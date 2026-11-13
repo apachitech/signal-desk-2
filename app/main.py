@@ -208,9 +208,9 @@ async def get_bot_status():
     }
 
 
-@app.post("/api/telegram/test")
+@app.api_route("/api/telegram/test", methods=["GET", "POST"])
 async def test_telegram_alert():
-    """Dispatches a test verification alert to Telegram."""
+    """Dispatches a test verification alert to Telegram (supports GET and POST)."""
     if not telegram_bot.enabled:
         return {
             "success": False,
