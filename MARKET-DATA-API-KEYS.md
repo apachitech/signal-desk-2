@@ -73,3 +73,4 @@ SignalDesk uses a prioritized fallback waterfall architecture:
 ```
 
 With just **Twelve Data** added, you have high-precision market data across both Forex and Crypto with zero monthly expenses.
+

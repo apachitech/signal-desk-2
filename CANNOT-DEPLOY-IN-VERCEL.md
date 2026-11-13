@@ -87,3 +87,4 @@ To trade profitably and safely:
 2. Deploy it to a continuous container/VPS platform (Render, Oracle Cloud Always Free, or an inexpensive $4 Linux server).
 
 *(Detailed step-by-step instructions for running without paying for a VPS can be found in [**`IF-NO-MONEY-4-VPS.md`**](file:///c:/Users/XPRISTO/Desktop/signal-desk-2/IF-NO-MONEY-4-VPS.md)).*
+
