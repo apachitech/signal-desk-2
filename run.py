@@ -10,16 +10,17 @@ if sys.platform == "win32":
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 if __name__ == "__main__":
-    # Always bind to 0.0.0.0 by default.
-    # 0.0.0.0 works universally on both local Windows (accessible via localhost/127.0.0.1)
-    # and all cloud hosts (Render, Docker, Koyeb, AWS) where external routing is required.
-    host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "10000" if os.getenv("RENDER") else "8000"))
+    # Force 0.0.0.0 on Render / Cloud environments regardless of any HOST env var
+    is_cloud = bool(os.getenv("RENDER") or os.getenv("PORT") or os.getenv("IS_RENDER"))
+    host = "0.0.0.0" if is_cloud else os.getenv("HOST", "0.0.0.0")
+    
+    # Render assigns its routing port in the PORT environment variable (typically 10000)
+    port = int(os.getenv("PORT", "10000" if is_cloud else "8000"))
+    
     reload_env = os.getenv("RELOAD", "").lower()
-    is_prod = bool(os.getenv("RENDER") or os.getenv("PORT"))
-    should_reload = reload_env in ("true", "1") if reload_env else not is_prod
+    should_reload = reload_env in ("true", "1") if reload_env else not is_cloud
 
     print("\n" + "=" * 55)
-    print(f"[*] SignalDesk Terminal starting on http://{host}:{port}")
+    print(f"[*] SignalDesk Terminal starting on http://{host}:{port} (Cloud: {is_cloud})")
     print("=" * 55 + "\n")
     uvicorn.run("app.main:app", host=host, port=port, reload=should_reload)
