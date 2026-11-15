@@ -1995,11 +1995,24 @@ function setupEventListeners() {
 }
 
 // ================= BOOTSTRAP =================
+// Disable browser auto-scroll restoration on mobile/PWA webviews
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+}
+
 window.addEventListener('DOMContentLoaded', () => {
+    // Force immediate scroll to top before rendering charts & tabs
+    window.scrollTo(0, 0);
+
     initChart();
     setupEventListeners();
     calculateStake();
     loadJournal();
     fetchSignal();
     startRealTimeStreaming(); // Starts the continuous live stream!
+
+    // Double-guard after chart canvas & sub-elements mount
+    setTimeout(() => {
+        window.scrollTo(0, 0);
+    }, 50);
 });
