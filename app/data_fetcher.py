@@ -41,6 +41,13 @@ BASE_PRICES = {
     "NZDUSD": 0.5670,
     "EURJPY": 177.70,
     "GBPJPY": 210.70,
+    "EURGBP": 0.8340,
+    "EURCAD": 1.5740,
+    "EURAUD": 1.6280,
+    "GBPAUD": 1.9510,
+    "AUDJPY": 108.10,
+    "CADJPY": 111.80,
+    "CHFJPY": 190.25,
     # Crypto
     "BTCUSDT": 82600.0,
     "ETHUSDT": 2480.0,
@@ -49,13 +56,20 @@ BASE_PRICES = {
     "XRPUSDT": 2.25,
     "DOGEUSDT": 0.195,
     "ADAUSDT": 0.72,
+    "AVAXUSDT": 28.50,
+    "LINKUSDT": 15.20,
+    "SUIUSDT": 3.10,
+    "DOTUSDT": 7.40,
+    "NEARUSDT": 5.80,
     # Commodities
     "XAUUSD": 4195.0,
     "XAGUSD": 58.0,
     "USOIL": 96.0,
+    "NATGAS": 3.25,
     # Indices
     "SPX": 7800.0,
     "NDX": 30120.0,
+    "GER40": 19500.0,
     # Pocket Option 24/7 OTC Pairs
     "EURUSD_OTC": 1.1250,
     "GBPUSD_OTC": 1.3340,
@@ -66,7 +80,11 @@ BASE_PRICES = {
     "NZDUSD_OTC": 0.5670,
     "XAUUSD_OTC": 4195.0,
     "BTCUSD_OTC": 82600.0,
-    "ETHUSD_OTC": 2480.0
+    "ETHUSD_OTC": 2480.0,
+    "EURGBP_OTC": 0.8340,
+    "AUDJPY_OTC": 108.10,
+    "GBPJPY_OTC": 210.70,
+    "SOLUSD_OTC": 185.0
 }
 
 

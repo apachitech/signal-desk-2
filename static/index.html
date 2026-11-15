@@ -222,9 +222,13 @@
                                     <option value="USDCAD_OTC">USD/CAD (OTC 24/7)</option>
                                     <option value="USDCHF_OTC">USD/CHF (OTC 24/7)</option>
                                     <option value="NZDUSD_OTC">NZD/USD (OTC 24/7)</option>
+                                    <option value="EURGBP_OTC">EUR/GBP (OTC 24/7)</option>
+                                    <option value="AUDJPY_OTC">AUD/JPY (OTC 24/7)</option>
+                                    <option value="GBPJPY_OTC">GBP/JPY (OTC 24/7)</option>
                                     <option value="XAUUSD_OTC">XAU/USD Gold (OTC 24/7)</option>
                                     <option value="BTCUSD_OTC">BTC/USD (OTC 24/7)</option>
                                     <option value="ETHUSD_OTC">ETH/USD (OTC 24/7)</option>
+                                    <option value="SOLUSD_OTC">SOL/USD (OTC 24/7)</option>
                                 </optgroup>
                                 <optgroup label="Forex Major Pairs & Crosses">
                                     <option value="EURUSD" selected>EUR/USD</option>
@@ -236,8 +240,15 @@
                                     <option value="NZDUSD">NZD/USD</option>
                                     <option value="EURJPY">EUR/JPY</option>
                                     <option value="GBPJPY">GBP/JPY</option>
+                                    <option value="EURGBP">EUR/GBP</option>
+                                    <option value="EURCAD">EUR/CAD</option>
+                                    <option value="EURAUD">EUR/AUD</option>
+                                    <option value="GBPAUD">GBP/AUD</option>
+                                    <option value="AUDJPY">AUD/JPY</option>
+                                    <option value="CADJPY">CAD/JPY</option>
+                                    <option value="CHFJPY">CHF/JPY</option>
                                 </optgroup>
-                                <optgroup label="Crypto Assets (Binance Live)">
+                                <optgroup label="Crypto Assets (Binance Live 24/7)">
                                     <option value="BTCUSDT">BTC/USDT (Bitcoin)</option>
                                     <option value="ETHUSDT">ETH/USDT (Ethereum)</option>
                                     <option value="SOLUSDT">SOL/USDT (Solana)</option>
@@ -245,15 +256,22 @@
                                     <option value="XRPUSDT">XRP/USDT (Ripple)</option>
                                     <option value="DOGEUSDT">DOGE/USDT (Dogecoin)</option>
                                     <option value="ADAUSDT">ADA/USDT (Cardano)</option>
+                                    <option value="AVAXUSDT">AVAX/USDT (Avalanche)</option>
+                                    <option value="LINKUSDT">LINK/USDT (Chainlink)</option>
+                                    <option value="SUIUSDT">SUI/USDT (Sui)</option>
+                                    <option value="DOTUSDT">DOT/USDT (Polkadot)</option>
+                                    <option value="NEARUSDT">NEAR/USDT (NEAR Protocol)</option>
                                 </optgroup>
                                 <optgroup label="Precious Metals & Commodities">
                                     <option value="XAUUSD">XAU/USD (Gold Spot)</option>
                                     <option value="XAGUSD">XAG/USD (Silver Spot)</option>
                                     <option value="USOIL">USOIL (Crude Oil WTI)</option>
+                                    <option value="NATGAS">NATGAS (Natural Gas)</option>
                                 </optgroup>
                                 <optgroup label="Major Global Indices">
                                     <option value="SPX">SPX (S&P 500 Index)</option>
                                     <option value="NDX">NDX (Nasdaq 100 Index)</option>
+                                    <option value="GER40">GER40 (German DAX 40)</option>
                                 </optgroup>
                             </select>
                         </div>
@@ -1320,9 +1338,13 @@
                                 <option value="USDCAD_OTC">USD/CAD (OTC 24/7)</option>
                                 <option value="USDCHF_OTC">USD/CHF (OTC 24/7)</option>
                                 <option value="NZDUSD_OTC">NZD/USD (OTC 24/7)</option>
+                                <option value="EURGBP_OTC">EUR/GBP (OTC 24/7)</option>
+                                <option value="AUDJPY_OTC">AUD/JPY (OTC 24/7)</option>
+                                <option value="GBPJPY_OTC">GBP/JPY (OTC 24/7)</option>
                                 <option value="XAUUSD_OTC">XAU/USD Gold (OTC 24/7)</option>
                                 <option value="BTCUSD_OTC">BTC/USD (OTC 24/7)</option>
                                 <option value="ETHUSD_OTC">ETH/USD (OTC 24/7)</option>
+                                <option value="SOLUSD_OTC">SOL/USD (OTC 24/7)</option>
                             </optgroup>
                             <optgroup label="Standard Liquid Assets">
                                 <option value="EURUSD">EUR/USD</option>
@@ -1334,6 +1356,13 @@
                                 <option value="NZDUSD">NZD/USD</option>
                                 <option value="EURJPY">EUR/JPY</option>
                                 <option value="GBPJPY">GBP/JPY</option>
+                                <option value="EURGBP">EUR/GBP</option>
+                                <option value="EURCAD">EUR/CAD</option>
+                                <option value="EURAUD">EUR/AUD</option>
+                                <option value="GBPAUD">GBP/AUD</option>
+                                <option value="AUDJPY">AUD/JPY</option>
+                                <option value="CADJPY">CAD/JPY</option>
+                                <option value="CHFJPY">CHF/JPY</option>
                                 <option value="BTCUSDT">BTC/USDT</option>
                                 <option value="ETHUSDT">ETH/USDT</option>
                                 <option value="SOLUSDT">SOL/USDT</option>
@@ -1341,11 +1370,18 @@
                                 <option value="XRPUSDT">XRP/USDT</option>
                                 <option value="DOGEUSDT">DOGE/USDT</option>
                                 <option value="ADAUSDT">ADA/USDT</option>
+                                <option value="AVAXUSDT">AVAX/USDT</option>
+                                <option value="LINKUSDT">LINK/USDT</option>
+                                <option value="SUIUSDT">SUI/USDT</option>
+                                <option value="DOTUSDT">DOT/USDT</option>
+                                <option value="NEARUSDT">NEAR/USDT</option>
                                 <option value="XAUUSD">XAU/USD (Gold)</option>
                                 <option value="XAGUSD">XAG/USD (Silver)</option>
                                 <option value="USOIL">USOIL (Crude Oil)</option>
+                                <option value="NATGAS">NATGAS (Natural Gas)</option>
                                 <option value="SPX">SPX (S&P 500)</option>
                                 <option value="NDX">NDX (Nasdaq 100)</option>
+                                <option value="GER40">GER40 (German DAX 40)</option>
                             </optgroup>
                         </select>
                     </div>

@@ -72,6 +72,55 @@ ASSET_CONFIG = {
         "binance_symbol": None,
         "digits": 3
     },
+    "EURGBP": {
+        "name": "EUR / GBP",
+        "category": "forex",
+        "yf_ticker": "EURGBP=X",
+        "binance_symbol": None,
+        "digits": 5
+    },
+    "EURCAD": {
+        "name": "EUR / CAD",
+        "category": "forex",
+        "yf_ticker": "EURCAD=X",
+        "binance_symbol": None,
+        "digits": 5
+    },
+    "EURAUD": {
+        "name": "EUR / AUD",
+        "category": "forex",
+        "yf_ticker": "EURAUD=X",
+        "binance_symbol": None,
+        "digits": 5
+    },
+    "GBPAUD": {
+        "name": "GBP / AUD",
+        "category": "forex",
+        "yf_ticker": "GBPAUD=X",
+        "binance_symbol": None,
+        "digits": 5
+    },
+    "AUDJPY": {
+        "name": "AUD / JPY",
+        "category": "forex",
+        "yf_ticker": "AUDJPY=X",
+        "binance_symbol": None,
+        "digits": 3
+    },
+    "CADJPY": {
+        "name": "CAD / JPY",
+        "category": "forex",
+        "yf_ticker": "CADJPY=X",
+        "binance_symbol": None,
+        "digits": 3
+    },
+    "CHFJPY": {
+        "name": "CHF / JPY",
+        "category": "forex",
+        "yf_ticker": "CHFJPY=X",
+        "binance_symbol": None,
+        "digits": 3
+    },
 
     # --- CRYPTO ASSETS ---
     "BTCUSDT": {
@@ -123,6 +172,41 @@ ASSET_CONFIG = {
         "binance_symbol": "ADAUSDT",
         "digits": 4
     },
+    "AVAXUSDT": {
+        "name": "Avalanche / USDT",
+        "category": "crypto",
+        "yf_ticker": "AVAX-USD",
+        "binance_symbol": "AVAXUSDT",
+        "digits": 3
+    },
+    "LINKUSDT": {
+        "name": "Chainlink / USDT",
+        "category": "crypto",
+        "yf_ticker": "LINK-USD",
+        "binance_symbol": "LINKUSDT",
+        "digits": 3
+    },
+    "SUIUSDT": {
+        "name": "Sui / USDT",
+        "category": "crypto",
+        "yf_ticker": "SUI-USD",
+        "binance_symbol": "SUIUSDT",
+        "digits": 4
+    },
+    "DOTUSDT": {
+        "name": "Polkadot / USDT",
+        "category": "crypto",
+        "yf_ticker": "DOT-USD",
+        "binance_symbol": "DOTUSDT",
+        "digits": 4
+    },
+    "NEARUSDT": {
+        "name": "NEAR Protocol / USDT",
+        "category": "crypto",
+        "yf_ticker": "NEAR-USD",
+        "binance_symbol": "NEARUSDT",
+        "digits": 3
+    },
 
     # --- COMMODITIES & METALS ---
     "XAUUSD": {
@@ -146,6 +230,13 @@ ASSET_CONFIG = {
         "binance_symbol": None,
         "digits": 2
     },
+    "NATGAS": {
+        "name": "Natural Gas",
+        "category": "commodity",
+        "yf_ticker": "NG=F",
+        "binance_symbol": None,
+        "digits": 3
+    },
 
     # --- GLOBAL INDICES ---
     "SPX": {
@@ -159,6 +250,13 @@ ASSET_CONFIG = {
         "name": "Nasdaq 100 Index",
         "category": "index",
         "yf_ticker": "NQ=F",
+        "binance_symbol": None,
+        "digits": 2
+    },
+    "GER40": {
+        "name": "German DAX 40",
+        "category": "index",
+        "yf_ticker": "DAX",
         "binance_symbol": None,
         "digits": 2
     },
@@ -229,6 +327,34 @@ ASSET_CONFIG = {
     },
     "ETHUSD_OTC": {
         "name": "Ethereum / USD (OTC 24/7)",
+        "category": "otc",
+        "yf_ticker": None,
+        "binance_symbol": None,
+        "digits": 2
+    },
+    "EURGBP_OTC": {
+        "name": "EUR / GBP (OTC 24/7)",
+        "category": "otc",
+        "yf_ticker": None,
+        "binance_symbol": None,
+        "digits": 5
+    },
+    "AUDJPY_OTC": {
+        "name": "AUD / JPY (OTC 24/7)",
+        "category": "otc",
+        "yf_ticker": None,
+        "binance_symbol": None,
+        "digits": 3
+    },
+    "GBPJPY_OTC": {
+        "name": "GBP / JPY (OTC 24/7)",
+        "category": "otc",
+        "yf_ticker": None,
+        "binance_symbol": None,
+        "digits": 3
+    },
+    "SOLUSD_OTC": {
+        "name": "Solana / USD (OTC 24/7)",
         "category": "otc",
         "yf_ticker": None,
         "binance_symbol": None,
