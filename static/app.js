@@ -221,7 +221,7 @@ function initChart() {
 
     state.chart.applyOptions({
         width: container.clientWidth,
-        height: 380
+        height: container.clientHeight || 520
     });
 }
 
@@ -1700,9 +1700,42 @@ function setupEventListeners() {
         });
     }
 
-    // 7. Chart Reset Fit
-    document.getElementById('resetChartBtn').addEventListener('click', () => {
+    // 7. Chart Reset Fit & Fullscreen Expand Toggle
+    document.getElementById('resetChartBtn')?.addEventListener('click', () => {
         if (state.chart) state.chart.timeScale().fitContent();
+    });
+
+    const expandBtn = document.getElementById('expandChartBtn');
+    const chartCard = document.querySelector('.chart-section');
+    const chartContainer = document.getElementById('tvChartContainer');
+
+    const toggleExpandChart = () => {
+        if (!chartCard || !state.chart) return;
+        const isExpanded = chartCard.classList.toggle('chart-expanded');
+
+        if (expandBtn) {
+            expandBtn.innerHTML = isExpanded ? '✕ Minimize' : '⤢ Expand';
+            expandBtn.classList.toggle('active', isExpanded);
+        }
+
+        setTimeout(() => {
+            if (chartContainer && state.chart) {
+                state.chart.applyOptions({
+                    width: chartContainer.clientWidth,
+                    height: chartContainer.clientHeight
+                });
+                state.chart.timeScale().fitContent();
+            }
+        }, 80);
+    };
+
+    expandBtn?.addEventListener('click', toggleExpandChart);
+
+    // Press Escape to exit expanded chart mode
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && chartCard?.classList.contains('chart-expanded')) {
+            toggleExpandChart();
+        }
     });
 
     // 8. Backtest Tweaks & Controls
