@@ -31,7 +31,10 @@ async def background_market_scanner():
     When a genuine BUY or SELL signal forms, dispatches it to Telegram immediately
     without needing any user to be clicking on the website.
     """
-    scan_assets = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "EURUSD", "GBPUSD"]
+    scan_assets = [
+        "EURUSD_OTC", "GBPUSD_OTC", "USDJPY_OTC", "XAUUSD_OTC",
+        "BTCUSDT", "ETHUSDT", "SOLUSDT", "EURUSD", "GBPUSD"
+    ]
     scan_timeframes = ["1m", "5m"]
     await asyncio.sleep(5)  # Let feeds warm up
     print("[*] Autonomous Background Market Scanner started! Scanning for trade confluence...")
@@ -76,18 +79,22 @@ async def background_market_scanner():
                                     action=action,
                                     expiry_seconds=expiry_sec
                                 )
-                                if trade_res.get("success") and telegram_bot.enabled:
-                                    mode_str = "Demo" if pocket_trader.is_demo else "REAL"
-                                    await telegram_bot.send_signal(
-                                        asset=asset,
-                                        timeframe=tf,
-                                        action=action,
-                                        entry_price=sig.get("latest_price", 0.0),
-                                        optimal_zone="--",
-                                        adx=float(sig.get("indicators", {}).get("adx", 20.0)),
-                                        reason=f"🤖 AUTO-EXECUTED on Pocket Option ({mode_str} Account, ${pocket_trader.stake_amount:.2f}).",
-                                        expiry_label=f"{tf} Duration"
-                                    )
+                                if trade_res.get("success"):
+                                    mode_str = "DEMO" if pocket_trader.is_demo else "REAL"
+                                    print(f"[*] AUTO-TRADE EXECUTED: {action} on {asset} ({mode_str} balance, ${pocket_trader.stake_amount:.2f})")
+                                    if telegram_bot.enabled:
+                                        await telegram_bot.send_signal(
+                                            asset=asset,
+                                            timeframe=tf,
+                                            action=action,
+                                            entry_price=sig.get("latest_price", 0.0),
+                                            optimal_zone="--",
+                                            adx=float(sig.get("indicators", {}).get("adx", 20.0)),
+                                            reason=f"🤖 AUTO-EXECUTED on Pocket Option ({mode_str} Account, ${pocket_trader.stake_amount:.2f}).",
+                                            expiry_label=f"{tf} Duration"
+                                        )
+                                else:
+                                    print(f"[!] AUTO-TRADE BLOCKED on {asset}: {trade_res.get('reason')}")
                     except Exception as scan_err:
                         pass
                     await asyncio.sleep(0.5)
@@ -323,7 +330,10 @@ async def get_autotrade_status():
         },
         "connection": {
             "has_credentials": bool(pocket_trader.session_id and pocket_trader.uid),
-            "uid": pocket_trader.uid
+            "uid": pocket_trader.uid,
+            "connected": pocket_trader.connected,
+            "auth_error": pocket_trader.auth_error,
+            "last_trade_status": pocket_trader.last_trade_status
         }
     }
 

@@ -93,6 +93,8 @@ class PocketOptionAutoTrader:
         self.ws_client = None
         self.connected = False
         self.is_running = False
+        self.auth_error: str = ""
+        self.last_trade_status: str = ""
 
     def check_safety_guards(self) -> tuple[bool, str]:
         """Verify that account is not locked by risk circuit breakers."""
@@ -172,10 +174,34 @@ class PocketOptionAutoTrader:
                 "platform": 1
             }
             await self.ws_client.send("42" + json.dumps(["auth", auth_data]))
-            self.connected = True
-            logger.info("Pocket Option WebSocket authenticated successfully.")
-            return True
+
+            # Await and verify Pocket Option server auth response
+            auth_ok = False
+            for _ in range(6):
+                try:
+                    resp = await asyncio.wait_for(self.ws_client.recv(), timeout=3.0)
+                    if isinstance(resp, str):
+                        if "successauth" in resp:
+                            auth_ok = True
+                            self.auth_error = ""
+                            break
+                        elif "NotAuthorized" in resp:
+                            self.auth_error = "PO_SESSION_ID is expired or invalid (Pocket Option returned 'NotAuthorized'). Refresh session from browser."
+                            logger.error(f"[!] Pocket Option Auth Failed: {self.auth_error}")
+                            self.connected = False
+                            return False
+                except asyncio.TimeoutError:
+                    break
+
+            self.connected = auth_ok
+            if auth_ok:
+                logger.info("Pocket Option WebSocket authenticated successfully.")
+            elif not self.auth_error:
+                # If neither successauth nor NotAuthorized arrived within timeout, assume ready
+                self.connected = True
+            return self.connected
         except Exception as e:
+            self.auth_error = f"Connection failed: {e}"
             logger.error(f"Failed to connect to Pocket Option WebSocket: {e}")
             self.connected = False
             return False
@@ -206,7 +232,9 @@ class PocketOptionAutoTrader:
         if not self.connected or not self.ws_client:
             connected = await self.connect()
             if not connected:
-                return {"success": False, "reason": "Failed to connect to Pocket Option server."}
+                fail_msg = self.auth_error or "Failed to connect to Pocket Option server."
+                self.last_trade_status = f"Aborted: {fail_msg}"
+                return {"success": False, "reason": fail_msg}
 
         request_id = random.randint(10000000, 99999999)
         order_payload = {
