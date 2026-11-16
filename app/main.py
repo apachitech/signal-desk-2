@@ -338,10 +338,26 @@ async def get_autotrade_status():
         "connection": {
             "has_credentials": bool(pocket_trader.session_id and pocket_trader.uid),
             "uid": pocket_trader.uid,
+            "session_prefix": (pocket_trader.session_id[:6] + "...") if pocket_trader.session_id else "None",
             "connected": pocket_trader.connected,
             "auth_error": pocket_trader.auth_error,
             "last_trade_status": pocket_trader.last_trade_status
         }
+    }
+
+
+@app.get("/api/autotrade/test-connect")
+async def test_autotrade_connection():
+    """Live verification of Pocket Option WebSocket authentication."""
+    pocket_trader.connected = False
+    ok = await pocket_trader.connect()
+    return {
+        "connected": ok,
+        "is_demo": pocket_trader.is_demo,
+        "gateway": pocket_trader.ws_url,
+        "session_prefix": (pocket_trader.session_id[:6] + "...") if pocket_trader.session_id else "None",
+        "auth_error": pocket_trader.auth_error,
+        "last_trade_status": pocket_trader.last_trade_status
     }
 
 
