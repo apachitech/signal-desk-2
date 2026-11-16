@@ -70,7 +70,7 @@ class PocketOptionAutoTrader:
     """
     def __init__(self):
         self.enabled: bool = os.getenv("PO_AUTO_TRADE_ENABLED", "false").lower() in ("true", "1")
-        self.session_id: str = os.getenv("PO_SESSION_ID", "").strip()
+        self.session_id: str = os.getenv("PO_SESSION_ID", "").strip().strip("\"'")
         self.uid: int = int(os.getenv("PO_UID", "0") or 0)
         self.is_demo: bool = os.getenv("PO_IS_DEMO", "true").lower() in ("true", "1")
         self.stake_amount: float = float(os.getenv("PO_STAKE_AMOUNT", "1.0"))
