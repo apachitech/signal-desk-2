@@ -229,3 +229,4 @@ class PocketOptionAutoTrader:
 
 # Global singleton instance
 pocket_trader = PocketOptionAutoTrader()
+
