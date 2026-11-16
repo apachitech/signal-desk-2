@@ -32,8 +32,11 @@ async def background_market_scanner():
     without needing any user to be clicking on the website.
     """
     scan_assets = [
-        "EURUSD_OTC", "GBPUSD_OTC", "USDJPY_OTC", "XAUUSD_OTC",
-        "BTCUSDT", "ETHUSDT", "SOLUSDT", "EURUSD", "GBPUSD"
+        "EURUSD_OTC",  # ~92% High Payout OTC
+        "GBPUSD_OTC",  # ~90-92% High Payout OTC
+        "USDJPY_OTC",  # ~86-88% High Payout OTC
+        "XAUUSD_OTC",  # ~88% Gold OTC
+        "BTCUSDT"      # Top Volume Crypto 24/7
     ]
     scan_timeframes = ["1m", "5m"]
     await asyncio.sleep(5)  # Let feeds warm up
@@ -312,6 +315,7 @@ async def get_bot_status():
 @app.get("/api/autotrade/status")
 async def get_autotrade_status():
     """Returns real-time status of the Pocket Option automated trading engine."""
+    pocket_trader.clean_expired_deals()
     return {
         "enabled": pocket_trader.enabled,
         "is_demo": pocket_trader.is_demo,
@@ -319,6 +323,9 @@ async def get_autotrade_status():
         "max_daily_loss": pocket_trader.max_daily_loss,
         "max_daily_profit": pocket_trader.max_daily_profit,
         "max_consecutive_losses": pocket_trader.max_consecutive_losses,
+        "max_concurrent_trades": pocket_trader.max_concurrent_trades,
+        "trade_cooldown_seconds": pocket_trader.trade_cooldown_seconds,
+        "active_deals_count": len(pocket_trader.active_deals),
         "session_stats": {
             "daily_pnl": pocket_trader.daily_pnl,
             "total_trades": pocket_trader.total_trades_today,

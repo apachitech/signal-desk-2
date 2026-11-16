@@ -80,6 +80,12 @@ class PocketOptionAutoTrader:
         self.max_daily_profit: float = float(os.getenv("PO_MAX_DAILY_PROFIT", "10.0"))
         self.max_consecutive_losses: int = int(os.getenv("PO_MAX_CONSECUTIVE_LOSSES", "3"))
 
+        # Concurrency & Pacing Protection
+        self.max_concurrent_trades: int = int(os.getenv("PO_MAX_CONCURRENT_TRADES", "2"))
+        self.trade_cooldown_seconds: float = float(os.getenv("PO_TRADE_COOLDOWN_SECONDS", "30.0"))
+        self.last_trade_time: float = 0.0
+        self.active_deals: Dict[str, Dict[str, Any]] = {}
+
         # Daily Session P&L Trackers
         self.daily_pnl: float = 0.0
         self.consecutive_losses: int = 0
@@ -101,8 +107,16 @@ class PocketOptionAutoTrader:
         domain = "demo-api-eu.po.market" if self.is_demo else "api-eu.po.market"
         return f"wss://{domain}/socket.io/?EIO=4&transport=websocket"
 
-    def check_safety_guards(self) -> tuple[bool, str]:
-        """Verify that account is not locked by risk circuit breakers."""
+    def clean_expired_deals(self) -> None:
+        """Purge deals whose expiry duration has ended."""
+        now = time.time()
+        self.active_deals = {k: v for k, v in self.active_deals.items() if v.get("expires_at", 0) > now}
+
+    def check_safety_guards(self, asset: Optional[str] = None, action: Optional[str] = None) -> tuple[bool, str]:
+        """
+        Verify that account is not locked by risk circuit breakers,
+        concurrency saturation, pacing cooldowns, or opposing hedge conflicts.
+        """
         if self.circuit_broken:
             return False, f"Circuit Breaker Tripped: {self.circuit_reason}"
         if self.daily_pnl <= -abs(self.max_daily_loss):
@@ -117,6 +131,27 @@ class PocketOptionAutoTrader:
             self.circuit_broken = True
             self.circuit_reason = f"{self.max_consecutive_losses} consecutive losses. Cooldown active."
             return False, self.circuit_reason
+
+        # Guard 1: Concurrency Cap (Prevent basket over-exposure)
+        self.clean_expired_deals()
+        if len(self.active_deals) >= self.max_concurrent_trades:
+            return False, f"Concurrency Limit: {len(self.active_deals)}/{self.max_concurrent_trades} active deals running. Awaiting expiry."
+
+        # Guard 2: Pacing Cooldown (Prevent multi-trade spikes in the same minute)
+        now = time.time()
+        time_since_last = now - self.last_trade_time
+        if self.last_trade_time > 0 and time_since_last < self.trade_cooldown_seconds:
+            remaining = int(self.trade_cooldown_seconds - time_since_last)
+            return False, f"Pacing Cooldown: Wait {remaining}s before opening next deal to avoid clustered exposure."
+
+        # Guard 3: Opposing Direction Conflict on Same Base Asset
+        if asset and action:
+            clean_base = asset.replace("_OTC", "").replace("=X", "")
+            for deal_key, deal in self.active_deals.items():
+                active_base = deal["asset"].replace("_OTC", "").replace("=X", "")
+                if clean_base == active_base and deal["action"].upper() != action.upper():
+                    return False, f"Opposing conflict: Active {deal['action']} already open on {deal['asset']}. Cannot open {action} simultaneously."
+
         return True, "All safety checks passed."
 
     async def set_demo_mode(self, is_demo: bool):
@@ -219,7 +254,7 @@ class PocketOptionAutoTrader:
         if not self.enabled:
             return {"success": False, "reason": "Auto-trading toggle is OFF in SignalDesk."}
 
-        is_safe, reason = self.check_safety_guards()
+        is_safe, reason = self.check_safety_guards(asset=asset, action=action)
         if not is_safe:
             return {"success": False, "reason": reason}
 
@@ -249,7 +284,18 @@ class PocketOptionAutoTrader:
         try:
             msg = "42" + json.dumps(["openOrder", order_payload])
             await self.ws_client.send(msg)
+            now = time.time()
+            self.last_trade_time = now
             self.total_trades_today += 1
+            deal_key = f"{po_asset}:{action}:{request_id}"
+            self.active_deals[deal_key] = {
+                "asset": asset,
+                "po_asset": po_asset,
+                "action": action,
+                "amount": trade_amount,
+                "opened_at": now,
+                "expires_at": now + expiry_seconds
+            }
             logger.info(f"[*] AUTO-ORDER EXECUTED: {action} on {po_asset} for ${trade_amount:.2f} ({expiry_seconds}s)")
             return {
                 "success": True,
@@ -259,7 +305,7 @@ class PocketOptionAutoTrader:
                 "expiry_seconds": expiry_seconds,
                 "is_demo": self.is_demo,
                 "request_id": request_id,
-                "timestamp": int(time.time())
+                "timestamp": int(now)
             }
         except Exception as e:
             self.connected = False
