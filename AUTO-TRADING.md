@@ -114,12 +114,12 @@ If you see an error in the logs saying `session expired` or `connection closed`:
 1. Open **[pocketoption.com](https://pocketoption.com)** in your browser and log in.
 2. Press **`F12`** (Developer Tools) $\rightarrow$ **Network** $\rightarrow$ click **WS**.
 3. Refresh the page (`F5`).
-4. Click on `api-eu.po.market` $\rightarrow$ click **Messages**.
-5. Look for `42["auth", {"session": "XXXXX", ...}]`.
-6. Copy the new 32-character session ID.
-7. Open your [`.env`](.env) file:
+4. Click on `demo-api-eu.po.market` (for Demo) or `api-eu.po.market` (for Real) $\rightarrow$ click **Messages**.
+5. Look for the message sent: `42["auth", {"session": "XXXXX", ...}]`.
+6. Copy the session ID string (e.g. `esb0ce9n10e6isgr9rg8k4l9gu`).
+7. Update your [`.env`](.env) file (and Render Environment Variables):
    ```env
-   PO_SESSION_ID=your_new_session_id_here
+   PO_SESSION_ID=esb0ce9n10e6isgr9rg8k4l9gu
    ```
 8. Save the file and restart `python run.py`.
 
