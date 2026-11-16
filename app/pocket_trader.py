@@ -163,12 +163,14 @@ class PocketOptionAutoTrader:
             await self.ws_client.send("40")
             await self.ws_client.recv()
 
-            # Send auth packet
+            # Send auth packet matching exact browser signature
             auth_data = {
                 "session": self.session_id,
                 "isDemo": 1 if self.is_demo else 0,
                 "uid": self.uid,
-                "platform": 1
+                "platform": 2,
+                "isFastHistory": True,
+                "isOptimized": True
             }
             await self.ws_client.send("42" + json.dumps(["auth", auth_data]))
 
