@@ -75,7 +75,6 @@ async def background_market_scanner():
 
                             # 2. Automated Pocket Option Execution (If enabled by user)
                             if pocket_trader.enabled and _SENT_ALERTS.get(alert_key + ":po_trade") != last_candle_time:
-                                _SENT_ALERTS[alert_key + ":po_trade"] = last_candle_time
                                 expiry_sec = 60 if tf == "1m" else 300
                                 trade_res = await pocket_trader.open_trade(
                                     asset=asset,
@@ -83,6 +82,7 @@ async def background_market_scanner():
                                     expiry_seconds=expiry_sec
                                 )
                                 if trade_res.get("success"):
+                                    _SENT_ALERTS[alert_key + ":po_trade"] = last_candle_time
                                     mode_str = "DEMO" if pocket_trader.is_demo else "REAL"
                                     print(f"[*] AUTO-TRADE EXECUTED: {action} on {asset} ({mode_str} balance, ${pocket_trader.stake_amount:.2f})")
                                     if telegram_bot.enabled:
@@ -97,7 +97,20 @@ async def background_market_scanner():
                                             expiry_label=f"{tf} Duration"
                                         )
                                 else:
-                                    print(f"[!] AUTO-TRADE BLOCKED on {asset}: {trade_res.get('reason')}")
+                                    fail_reason = trade_res.get("reason", "Unknown block")
+                                    print(f"[!] AUTO-TRADE BLOCKED on {asset}: {fail_reason}")
+                                    if telegram_bot.enabled and "Pacing Cooldown" not in fail_reason:
+                                        # Only notify for actual failures or risk locks (not temporary pacing intervals)
+                                        await telegram_bot.send_signal(
+                                            asset=asset,
+                                            timeframe=tf,
+                                            action="WAIT",
+                                            entry_price=sig.get("latest_price", 0.0),
+                                            optimal_zone="--",
+                                            adx=float(sig.get("indicators", {}).get("adx", 20.0)),
+                                            reason=f"⚠️ AUTO-TRADE SKIPPED: {fail_reason}",
+                                            expiry_label="Risk Guard Active"
+                                        )
                     except Exception as scan_err:
                         pass
                     await asyncio.sleep(0.5)

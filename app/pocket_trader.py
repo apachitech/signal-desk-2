@@ -175,6 +175,8 @@ class PocketOptionAutoTrader:
             logger.warning("Pocket Option session_id or uid missing in .env")
             return False
 
+        self.auth_error = ""
+
         headers = {
             'Origin': 'https://pocketoption.com',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36'
@@ -211,11 +213,11 @@ class PocketOptionAutoTrader:
 
             # Await and verify Pocket Option server auth response
             auth_ok = False
-            for _ in range(6):
+            for _ in range(12):
                 try:
-                    resp = await asyncio.wait_for(self.ws_client.recv(), timeout=3.0)
+                    resp = await asyncio.wait_for(self.ws_client.recv(), timeout=4.0)
                     if isinstance(resp, str):
-                        if "successauth" in resp:
+                        if "successauth" in resp or "successupdateBalance" in resp:
                             auth_ok = True
                             self.auth_error = ""
                             break
@@ -229,7 +231,7 @@ class PocketOptionAutoTrader:
 
             self.connected = auth_ok
             if auth_ok:
-                logger.info("Pocket Option WebSocket authenticated successfully.")
+                logger.info(f"Pocket Option WebSocket ({'DEMO' if self.is_demo else 'REAL'}) authenticated successfully.")
             elif not self.auth_error:
                 # If neither successauth nor NotAuthorized arrived within timeout, assume ready
                 self.connected = True
