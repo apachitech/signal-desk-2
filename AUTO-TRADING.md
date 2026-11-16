@@ -129,15 +129,24 @@ If you see an error in the logs saying `session expired` or `connection closed`:
 
 > ⚠️ **Prerequisite Rule:** Do NOT switch to real money until you have completed **at least 20 demo trades** and verified a win rate above 60%.
 
-When you are confident and ready to trade with real funds:
+You can switch between **Demo** and **Real** in two ways:
 
+### Method A: One-Click Instant Switch (In Dashboard)
+1. In the top navigation bar, locate the Auto-Trader pill: `[ Auto-Trader: OFF (DEMO) ]`.
+2. **Click directly on the `DEMO` badge.**
+3. A confirmation modal will appear reminding you of your safety limits ($1.00 stake, -$5 stop-loss, +$10 target).
+4. Click **OK** to confirm.
+5. The badge will instantly turn into a glowing red **`REAL`** badge. The WebSocket connection automatically re-authenticates to your real cash balance.
+6. *To switch back to Demo at any time:* Simply click the **`REAL`** badge again.
+
+### Method B: Persistent Configuration (In `.env`)
 1. Open your [`.env`](.env) file.
 2. Change:
    ```env
    PO_IS_DEMO=false
    ```
 3. Restart `python run.py`.
-4. The badge in your header will change from **`DEMO`** (cyan) to **`REAL`** (red).
+4. The dashboard will now launch by default in **`REAL`** mode.
 5. The bot will now place $1.00 trades on your real Pocket Option balance with the same strict daily stop-loss (-$5) and profit take-profit (+$10).
 
 ---

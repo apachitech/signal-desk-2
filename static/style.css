@@ -1564,12 +1564,24 @@ input:checked + .slider:before {
     background: rgba(0, 212, 255, 0.15);
     color: var(--accent-cyan);
     border: 1px solid rgba(0, 212, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.autotrade-mode-label:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
 }
 
 .autotrade-mode-label.real {
     background: rgba(239, 68, 68, 0.18);
     color: #ef4444;
     border-color: rgba(239, 68, 68, 0.4);
+}
+
+.autotrade-mode-label.real:hover {
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
 }
 
 .btn-chart-tool {

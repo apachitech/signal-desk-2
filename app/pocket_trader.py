@@ -112,6 +112,29 @@ class PocketOptionAutoTrader:
             return False, self.circuit_reason
         return True, "All safety checks passed."
 
+    async def set_demo_mode(self, is_demo: bool):
+        """Switch between Demo and Real account, re-authenticating if connected."""
+        if self.is_demo == is_demo:
+            return
+        self.is_demo = is_demo
+        mode_str = "DEMO" if is_demo else "REAL"
+        logger.info(f"Pocket Option account switched to: {mode_str}")
+        if self.connected and self.ws_client:
+            try:
+                auth_data = {
+                    "session": self.session_id,
+                    "isDemo": 1 if self.is_demo else 0,
+                    "uid": self.uid,
+                    "platform": 1
+                }
+                await self.ws_client.send("42" + json.dumps(["auth", auth_data]))
+                logger.info(f"Re-sent Pocket Option auth packet for {mode_str} balance.")
+            except Exception as e:
+                logger.warning(f"Error re-authenticating on mode switch: {e}")
+                self.connected = False
+                if self.ws_client:
+                    await self.ws_client.close()
+
     async def connect(self) -> bool:
         """Establish authenticated WebSocket connection with Pocket Option."""
         if not self.session_id or not self.uid:

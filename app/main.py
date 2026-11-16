@@ -327,11 +327,15 @@ class AutoTradeConfigRequest(BaseModel):
 async def update_autotrade_config(cfg: AutoTradeConfigRequest):
     """Update auto-trading toggle, mode, and stake live from the frontend dashboard."""
     pocket_trader.enabled = cfg.enabled
-    pocket_trader.is_demo = cfg.is_demo
+    if pocket_trader.is_demo != cfg.is_demo:
+        await pocket_trader.set_demo_mode(cfg.is_demo)
     pocket_trader.stake_amount = max(1.0, cfg.stake_amount)
     return {
         "success": True,
-        "message": f"Auto-trading {'ENABLED' if pocket_trader.enabled else 'DISABLED'} (Mode: {'Demo' if pocket_trader.is_demo else 'REAL'}, Stake: ${pocket_trader.stake_amount:.2f})"
+        "enabled": pocket_trader.enabled,
+        "is_demo": pocket_trader.is_demo,
+        "stake_amount": pocket_trader.stake_amount,
+        "message": f"Auto-trading {'ENABLED' if pocket_trader.enabled else 'DISABLED'} (Mode: {'DEMO' if pocket_trader.is_demo else 'REAL'}, Stake: ${pocket_trader.stake_amount:.2f})"
     }
 
 

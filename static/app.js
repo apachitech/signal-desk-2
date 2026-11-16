@@ -2027,12 +2027,14 @@ function setupEventListeners() {
     const poToggleBtn = document.getElementById('poAutoTradeToggleBtn');
     const poDot = document.getElementById('poStatusDot');
     const poModeBadge = document.getElementById('poModeBadge');
+    let currentIsDemo = true;
 
     const fetchAutoTradeStatus = async () => {
         try {
             const res = await fetch('/api/autotrade/status');
             if (res.ok) {
                 const data = await res.json();
+                currentIsDemo = data.is_demo;
                 if (poToggleBtn && poDot) {
                     poToggleBtn.textContent = data.enabled ? 'ON' : 'OFF';
                     poToggleBtn.classList.toggle('active', data.enabled);
@@ -2041,10 +2043,52 @@ function setupEventListeners() {
                 if (poModeBadge) {
                     poModeBadge.textContent = data.is_demo ? 'DEMO' : 'REAL';
                     poModeBadge.classList.toggle('real', !data.is_demo);
+                    poModeBadge.title = data.is_demo 
+                        ? 'Account: DEMO ($0 risk). Click to switch to REAL Live Money' 
+                        : 'Account: REAL MONEY! Click to switch back to DEMO';
                 }
             }
         } catch (e) {}
     };
+
+    if (poModeBadge) {
+        poModeBadge.addEventListener('click', async () => {
+            const willBeReal = currentIsDemo; // If currently demo, user wants real
+            if (willBeReal) {
+                const confirmed = confirm(
+                    "⚠️ SWITCH TO REAL LIVE AUTO-TRADING?\n\n" +
+                    "Real funds will be used for auto-trading on Pocket Option!\n\n" +
+                    "• Stake: $1.00 flat\n" +
+                    "• Daily Stop-Loss: -$5.00\n" +
+                    "• Daily Take-Profit: +$10.00\n\n" +
+                    "Ensure you have practiced on Demo first.\n" +
+                    "Do you want to switch to REAL money?"
+                );
+                if (!confirmed) return;
+            }
+            const isCurrentlyOn = poToggleBtn ? poToggleBtn.classList.contains('active') : false;
+            try {
+                const res = await fetch('/api/autotrade/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        enabled: isCurrentlyOn,
+                        is_demo: !willBeReal,
+                        stake_amount: 1.0
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    currentIsDemo = data.is_demo;
+                    poModeBadge.textContent = currentIsDemo ? 'DEMO' : 'REAL';
+                    poModeBadge.classList.toggle('real', !currentIsDemo);
+                    poModeBadge.title = currentIsDemo 
+                        ? 'Account: DEMO ($0 risk). Click to switch to REAL Live Money' 
+                        : 'Account: REAL MONEY! Click to switch back to DEMO';
+                }
+            } catch (err) {}
+        });
+    }
 
     if (poToggleBtn) {
         poToggleBtn.addEventListener('click', async () => {
@@ -2056,7 +2100,7 @@ function setupEventListeners() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         enabled: newTarget,
-                        is_demo: true,
+                        is_demo: currentIsDemo,
                         stake_amount: 1.0
                     })
                 });
