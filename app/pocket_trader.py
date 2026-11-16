@@ -89,12 +89,17 @@ class PocketOptionAutoTrader:
         self.circuit_broken: bool = False
         self.circuit_reason: str = ""
 
-        self.ws_url = "wss://api-eu.po.market/socket.io/?EIO=4&transport=websocket"
         self.ws_client = None
         self.connected = False
         self.is_running = False
         self.auth_error: str = ""
         self.last_trade_status: str = ""
+
+    @property
+    def ws_url(self) -> str:
+        """Route to Pocket Option's dedicated Demo or Real WebSocket gateway."""
+        domain = "demo-api-eu.po.market" if self.is_demo else "api-eu.po.market"
+        return f"wss://{domain}/socket.io/?EIO=4&transport=websocket"
 
     def check_safety_guards(self) -> tuple[bool, str]:
         """Verify that account is not locked by risk circuit breakers."""
@@ -115,27 +120,19 @@ class PocketOptionAutoTrader:
         return True, "All safety checks passed."
 
     async def set_demo_mode(self, is_demo: bool):
-        """Switch between Demo and Real account, re-authenticating if connected."""
+        """Switch between Demo and Real account, reconnecting to the proper gateway."""
         if self.is_demo == is_demo:
             return
         self.is_demo = is_demo
         mode_str = "DEMO" if is_demo else "REAL"
         logger.info(f"Pocket Option account switched to: {mode_str}")
-        if self.connected and self.ws_client:
+        self.connected = False
+        if self.ws_client:
             try:
-                auth_data = {
-                    "session": self.session_id,
-                    "isDemo": 1 if self.is_demo else 0,
-                    "uid": self.uid,
-                    "platform": 1
-                }
-                await self.ws_client.send("42" + json.dumps(["auth", auth_data]))
-                logger.info(f"Re-sent Pocket Option auth packet for {mode_str} balance.")
-            except Exception as e:
-                logger.warning(f"Error re-authenticating on mode switch: {e}")
-                self.connected = False
-                if self.ws_client:
-                    await self.ws_client.close()
+                await self.ws_client.close()
+            except Exception:
+                pass
+            self.ws_client = None
 
     async def connect(self) -> bool:
         """Establish authenticated WebSocket connection with Pocket Option."""
