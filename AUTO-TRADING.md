@@ -150,3 +150,4 @@ When you are confident and ready to trade with real funds:
 - [ ] Confirm the **Auto-Trader** button is set to **`ON`**.
 - [ ] Keep your Telegram open on your phone.
 - [ ] When you are done trading for the day, toggle Auto-Trader **`OFF`** or press `Ctrl + C` in PowerShell.
+

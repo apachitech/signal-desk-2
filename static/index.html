@@ -63,6 +63,32 @@
                     </button>
                 </div>
 
+                <!-- Live Stream & Audio Settings (Moved from Navbar to make space) -->
+                <div class="side-menu-section">
+                    <div class="side-menu-section-title">STREAM & AUDIO SETTINGS</div>
+                    <div class="side-control-card">
+                        <div class="side-control-row">
+                            <div class="side-control-info">
+                                <span class="side-control-title">Continuous Live Stream</span>
+                                <span class="side-control-desc">Instant signal updates & live WebSocket feed</span>
+                            </div>
+                            <div class="switch">
+                                <input type="checkbox" id="autoRefreshToggle" checked>
+                                <span class="slider round"></span>
+                            </div>
+                        </div>
+                        <div class="side-control-row">
+                            <div class="side-control-info">
+                                <span class="side-control-title">Audio Chime Alert</span>
+                                <span class="side-control-desc">Test 85%+ high-confidence entry sound</span>
+                            </div>
+                            <button type="button" class="btn-side-action" id="testSoundBtn" title="Test Audio Alert Chime">
+                                <span>🔊 Test Chime</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Pocket Option Setup & Drills -->
                 <div class="side-menu-section">
                     <div class="side-menu-section-title">POCKET OPTION SETUP & DRILLS</div>
@@ -143,21 +169,11 @@
                     <span class="logo-text">Signal<span class="accent-text">Desk</span></span>
                     <span class="badge-pro">PRO</span>
                 </div>
-                <div class="live-market-badge" id="liveStreamBadge">
+                <div class="live-market-badge" id="liveStreamBadge" title="Live Continuous Stream Active">
                     <span class="pulse-dot"></span>
                     <span id="marketStatusText">LIVE STREAMING</span>
                 </div>
             </div>
-
-            <!-- Streamlined Primary Navigation Tabs -->
-            <nav class="nav-tabs">
-                <button class="nav-tab active" data-tab="tab-signal" id="tabBtnSignal">
-                    <span class="tab-icon">🎯</span> Live Terminal
-                </button>
-                <button class="nav-tab" data-tab="tab-backtest" id="tabBtnBacktest">
-                    <span class="tab-icon">📊</span> Backtester
-                </button>
-            </nav>
 
             <div class="header-right">
                 <!-- Live Market Clock & Timeframe Expiry -->
@@ -174,29 +190,16 @@
                 </div>
 
                 <!-- Pocket Option Auto-Trader Badge & Toggle -->
-                <div class="autotrade-header-badge">
+                <div class="autotrade-header-badge" title="Automated Execution via Pocket Option WebSocket">
                     <span class="autotrade-status-dot" id="poStatusDot"></span>
                     <span class="autotrade-title">Auto-Trader:</span>
                     <button class="btn-autotrade-toggle" id="poAutoTradeToggleBtn">OFF</button>
                     <span class="autotrade-mode-label" id="poModeBadge">DEMO</span>
                 </div>
 
-                <!-- Real-Time Auto-Stream Toggle -->
-                <div class="auto-refresh-container">
-                    <label class="switch-label" for="autoRefreshToggle" title="Continuous Real-Time Signal Updates">
-                        <span class="switch-text">Stream</span>
-                        <div class="switch">
-                            <input type="checkbox" id="autoRefreshToggle" checked>
-                            <span class="slider round"></span>
-                        </div>
-                    </label>
-                </div>
-                <!-- Sound Toggle & Test -->
+                <!-- Sound Toggle -->
                 <button class="btn-icon" id="soundToggleBtn" title="Toggle Audio Alerts (Click to turn on/off)">
                     <span id="soundIcon">🔔</span>
-                </button>
-                <button class="btn-icon" id="testSoundBtn" title="Test Audio Alert Chime" style="color: var(--color-buy);">
-                    <span>🔊</span>
                 </button>
             </div>
         </header>
