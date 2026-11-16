@@ -138,6 +138,16 @@ class BacktestRequest(BaseModel):
     limit: int = 1000
 
 
+@app.get("/api/health")
+async def health_check():
+    """Lightweight ping endpoint for UptimeRobot / ping monitors to keep Render awake 24/7."""
+    return {
+        "status": "online",
+        "autotrade_enabled": pocket_trader.enabled,
+        "is_demo": pocket_trader.is_demo
+    }
+
+
 @app.get("/api/config")
 async def get_app_config():
     """Return available assets, timeframes and metadata."""
