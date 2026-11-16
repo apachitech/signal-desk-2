@@ -1509,10 +1509,67 @@ input:checked + .slider:before {
 .legend-color.ema-trend { background: var(--color-ema-trend); }
 .legend-color.bb-band { background: var(--color-bb); }
 
-.chart-tools {
-    display: flex;
+/* Auto-Trader Header Control */
+.autotrade-header-badge {
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid var(--border-color);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+}
+
+.autotrade-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #64748b;
+}
+
+.autotrade-status-dot.active {
+    background: #00e676;
+    box-shadow: 0 0 8px rgba(0, 230, 118, 0.7);
+}
+
+.autotrade-title {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.btn-autotrade-toggle {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-autotrade-toggle.active {
+    background: #00e676;
+    color: #0b0f19;
+    border-color: #00e676;
+}
+
+.autotrade-mode-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(0, 212, 255, 0.15);
+    color: var(--accent-cyan);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.autotrade-mode-label.real {
+    background: rgba(239, 68, 68, 0.18);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.4);
 }
 
 .btn-chart-tool {

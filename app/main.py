@@ -14,6 +14,7 @@ from app.signal_engine import analyze_signal
 from app.backtester import run_full_backtest, run_all_assets_backtest
 from app.live_feed import start_live_feeds
 from app.telegram_bot import telegram_bot
+from app.pocket_trader import pocket_trader
 
 app = FastAPI(title="SignalDesk Quantitative Bot API", version="2.0.0")
 
@@ -49,8 +50,9 @@ async def background_market_scanner():
                         last_candle_time = int(candles[-1]["time"])
                         alert_key = f"{asset}:{tf}"
 
-                        if action in ["BUY", "SELL"] and telegram_bot.enabled:
-                            if _SENT_ALERTS.get(alert_key) != last_candle_time:
+                        if action in ["BUY", "SELL"]:
+                            # 1. Automatic Telegram Signal Dispatch
+                            if telegram_bot.enabled and _SENT_ALERTS.get(alert_key) != last_candle_time:
                                 _SENT_ALERTS[alert_key] = last_candle_time
                                 entry_info = sig.get("entry", {})
                                 await telegram_bot.send_signal(
@@ -63,6 +65,28 @@ async def background_market_scanner():
                                     reason=sig.get("reason", ""),
                                     expiry_label=sig.get("expiry_label", f"{tf} Expiry")
                                 )
+
+                            # 2. Automated Pocket Option Execution (If enabled by user)
+                            if pocket_trader.enabled and _SENT_ALERTS.get(alert_key + ":po_trade") != last_candle_time:
+                                _SENT_ALERTS[alert_key + ":po_trade"] = last_candle_time
+                                expiry_sec = 60 if tf == "1m" else 300
+                                trade_res = await pocket_trader.open_trade(
+                                    asset=asset,
+                                    action=action,
+                                    expiry_seconds=expiry_sec
+                                )
+                                if trade_res.get("success") and telegram_bot.enabled:
+                                    mode_str = "Demo" if pocket_trader.is_demo else "REAL"
+                                    await telegram_bot.send_signal(
+                                        asset=asset,
+                                        timeframe=tf,
+                                        action=action,
+                                        entry_price=sig.get("latest_price", 0.0),
+                                        optimal_zone="--",
+                                        adx=float(sig.get("indicators", {}).get("adx", 20.0)),
+                                        reason=f"🤖 AUTO-EXECUTED on Pocket Option ({mode_str} Account, ${pocket_trader.stake_amount:.2f}).",
+                                        expiry_label=f"{tf} Duration"
+                                    )
                     except Exception as scan_err:
                         pass
                     await asyncio.sleep(0.5)
@@ -264,6 +288,50 @@ async def get_bot_status():
             "configured": telegram_bot.enabled,
             "chat_id_set": bool(telegram_bot.chat_id)
         }
+    }
+
+
+@app.get("/api/autotrade/status")
+async def get_autotrade_status():
+    """Returns real-time status of the Pocket Option automated trading engine."""
+    return {
+        "enabled": pocket_trader.enabled,
+        "is_demo": pocket_trader.is_demo,
+        "stake_amount": pocket_trader.stake_amount,
+        "max_daily_loss": pocket_trader.max_daily_loss,
+        "max_daily_profit": pocket_trader.max_daily_profit,
+        "max_consecutive_losses": pocket_trader.max_consecutive_losses,
+        "session_stats": {
+            "daily_pnl": pocket_trader.daily_pnl,
+            "total_trades": pocket_trader.total_trades_today,
+            "wins": pocket_trader.wins_today,
+            "losses": pocket_trader.losses_today,
+            "consecutive_losses": pocket_trader.consecutive_losses,
+            "circuit_broken": pocket_trader.circuit_broken,
+            "circuit_reason": pocket_trader.circuit_reason
+        },
+        "connection": {
+            "has_credentials": bool(pocket_trader.session_id and pocket_trader.uid),
+            "uid": pocket_trader.uid
+        }
+    }
+
+
+class AutoTradeConfigRequest(BaseModel):
+    enabled: bool
+    is_demo: bool = True
+    stake_amount: float = 1.0
+
+
+@app.post("/api/autotrade/config")
+async def update_autotrade_config(cfg: AutoTradeConfigRequest):
+    """Update auto-trading toggle, mode, and stake live from the frontend dashboard."""
+    pocket_trader.enabled = cfg.enabled
+    pocket_trader.is_demo = cfg.is_demo
+    pocket_trader.stake_amount = max(1.0, cfg.stake_amount)
+    return {
+        "success": True,
+        "message": f"Auto-trading {'ENABLED' if pocket_trader.enabled else 'DISABLED'} (Mode: {'Demo' if pocket_trader.is_demo else 'REAL'}, Stake: ${pocket_trader.stake_amount:.2f})"
     }
 
 

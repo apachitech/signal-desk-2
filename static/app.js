@@ -2023,8 +2023,53 @@ function setupEventListeners() {
         });
     });
 
-    // Initialize with 5m highlighted
-    updateSetupTf('5m');
+    // Auto-Trader Controls Handler
+    const poToggleBtn = document.getElementById('poAutoTradeToggleBtn');
+    const poDot = document.getElementById('poStatusDot');
+    const poModeBadge = document.getElementById('poModeBadge');
+
+    const fetchAutoTradeStatus = async () => {
+        try {
+            const res = await fetch('/api/autotrade/status');
+            if (res.ok) {
+                const data = await res.json();
+                if (poToggleBtn && poDot) {
+                    poToggleBtn.textContent = data.enabled ? 'ON' : 'OFF';
+                    poToggleBtn.classList.toggle('active', data.enabled);
+                    poDot.classList.toggle('active', data.enabled);
+                }
+                if (poModeBadge) {
+                    poModeBadge.textContent = data.is_demo ? 'DEMO' : 'REAL';
+                    poModeBadge.classList.toggle('real', !data.is_demo);
+                }
+            }
+        } catch (e) {}
+    };
+
+    if (poToggleBtn) {
+        poToggleBtn.addEventListener('click', async () => {
+            const isCurrentlyOn = poToggleBtn.classList.contains('active');
+            const newTarget = !isCurrentlyOn;
+            try {
+                const res = await fetch('/api/autotrade/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        enabled: newTarget,
+                        is_demo: true,
+                        stake_amount: 1.0
+                    })
+                });
+                if (res.ok) {
+                    poToggleBtn.textContent = newTarget ? 'ON' : 'OFF';
+                    poToggleBtn.classList.toggle('active', newTarget);
+                    if (poDot) poDot.classList.toggle('active', newTarget);
+                }
+            } catch (err) {}
+        });
+    }
+
+    fetchAutoTradeStatus();
 }
 
 // ================= BOOTSTRAP =================
