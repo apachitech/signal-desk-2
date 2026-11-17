@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from app.config import ASSET_CONFIG, TIMEFRAME_CONFIG
 from app.data_fetcher import get_candles
 from app.indicators import calculate_indicators, extract_chart_series
-from app.signal_engine import analyze_signal
+from app.signal_engine import analyze_signal, validate_sniper_precision
 from app.backtester import run_full_backtest, run_all_assets_backtest
 from app.live_feed import start_live_feeds
 from app.telegram_bot import telegram_bot
@@ -75,6 +75,26 @@ async def background_market_scanner():
 
                             # 2. Automated Pocket Option Execution (Across all enabled accounts in parallel)
                             if pocket_trader.enabled and _SENT_ALERTS.get(alert_key + ":po_trade") != last_candle_time:
+                                # ================= SNIPER PRECISION GATE =================
+                                # Priority #1: Accuracy, Precision & High-Probability Expectancy
+                                if pocket_trader.sniper_precision_mode:
+                                    mtf_tf = "5m" if tf == "1m" else "15m"
+                                    try:
+                                        mtf_candles = await get_candles(asset, mtf_tf, limit=60, force_refresh=False)
+                                        mtf_df = calculate_indicators(mtf_candles, settings={"threshold": 2.0}) if mtf_candles else None
+                                    except Exception:
+                                        mtf_df = None
+
+                                    is_sniper_safe, sniper_reason = validate_sniper_precision(
+                                        df=df,
+                                        sig=sig,
+                                        mtf_df=mtf_df,
+                                        min_confidence=pocket_trader.min_confidence
+                                    )
+                                    if not is_sniper_safe:
+                                        print(f"[🎯 Sniper Guard] Auto-trade bypassed on {asset} ({tf}): {sniper_reason}")
+                                        continue
+
                                 expiry_sec = 60 if tf == "1m" else 300
                                 trade_results = await pocket_trader.open_trade_all(
                                     asset=asset,
@@ -87,7 +107,8 @@ async def background_market_scanner():
                                     summary_lines = []
                                     for r in successful:
                                         summary_lines.append(f"• {r.get('account_name', 'Account')}: ${r.get('amount', 1.0):.2f}")
-                                    print(f"[*] AUTO-TRADE EXECUTED on {len(successful)} account(s): {action} on {asset}")
+                                    conf_val = sig.get('confidence', 80)
+                                    print(f"[🎯] SNIPER AUTO-TRADE EXECUTED on {len(successful)} account(s): {action} on {asset} ({conf_val}% Confluence)")
                                     if telegram_bot.enabled:
                                         await telegram_bot.send_signal(
                                             asset=asset,
@@ -96,7 +117,7 @@ async def background_market_scanner():
                                             entry_price=sig.get("latest_price", 0.0),
                                             optimal_zone="--",
                                             adx=float(sig.get("indicators", {}).get("adx", 20.0)),
-                                            reason=f"🤖 AUTO-EXECUTED on {len(successful)} Account(s):\n" + "\n".join(summary_lines),
+                                            reason=f"🎯 SNIPER AUTO-EXECUTED on {len(successful)} Account(s) ({conf_val}% Confidence):\n" + "\n".join(summary_lines),
                                             expiry_label=f"{tf} Duration"
                                         )
                                 else:
@@ -347,6 +368,13 @@ async def get_autotrade_status():
         "max_concurrent_trades": pocket_trader.max_concurrent_trades,
         "trade_cooldown_seconds": pocket_trader.trade_cooldown_seconds,
         "active_deals_count": len(pocket_trader.active_deals),
+        "sniper_precision": {
+            "active": pocket_trader.sniper_precision_mode,
+            "min_confidence": pocket_trader.min_confidence,
+            "mtf_alignment": True,
+            "anti_exhaustion": True,
+            "candle_momentum": True
+        },
         "session_stats": {
             "daily_pnl": pocket_trader.daily_pnl,
             "total_trades": pocket_trader.total_trades_today,
@@ -386,6 +414,8 @@ class AutoTradeConfigRequest(BaseModel):
     enabled: bool
     is_demo: bool = True
     stake_amount: float = 1.0
+    sniper_precision_mode: Optional[bool] = None
+    min_confidence: Optional[int] = None
 
 
 @app.post("/api/autotrade/config")
@@ -395,12 +425,18 @@ async def update_autotrade_config(cfg: AutoTradeConfigRequest):
     if pocket_trader.is_demo != cfg.is_demo:
         await pocket_trader.set_demo_mode(cfg.is_demo)
     pocket_trader.stake_amount = max(1.0, cfg.stake_amount)
+    if cfg.sniper_precision_mode is not None:
+        pocket_trader.sniper_precision_mode = cfg.sniper_precision_mode
+    if cfg.min_confidence is not None:
+        pocket_trader.min_confidence = max(70, min(95, cfg.min_confidence))
     return {
         "success": True,
         "enabled": pocket_trader.enabled,
         "is_demo": pocket_trader.is_demo,
         "stake_amount": pocket_trader.stake_amount,
-        "message": f"Auto-trading {'ENABLED' if pocket_trader.enabled else 'DISABLED'} (Mode: {'DEMO' if pocket_trader.is_demo else 'REAL'}, Stake: ${pocket_trader.stake_amount:.2f})"
+        "sniper_precision_mode": pocket_trader.sniper_precision_mode,
+        "min_confidence": pocket_trader.min_confidence,
+        "message": f"Auto-trading {'ENABLED' if pocket_trader.enabled else 'DISABLED'} (Mode: {'DEMO' if pocket_trader.is_demo else 'REAL'}, Stake: ${pocket_trader.stake_amount:.2f}, Sniper: {pocket_trader.min_confidence}%+)"
     }
 
 

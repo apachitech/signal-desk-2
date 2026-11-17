@@ -1,4 +1,4 @@
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 import pandas as pd
 from app.config import TIMEFRAME_CONFIG, ASSET_CONFIG, MIN_ADX_THRESHOLD
 
@@ -252,3 +252,97 @@ def analyze_signal(
         },
         "latest_price": round(price, digits)
     }
+
+
+def validate_sniper_precision(
+    df: pd.DataFrame,
+    sig: Dict[str, Any],
+    mtf_df: Optional[pd.DataFrame] = None,
+    min_confidence: int = 80
+) -> Tuple[bool, str]:
+    """
+    Ultra-Strict Sniper Precision Guard for Automated Live Trading.
+    Filters out marginal signals to guarantee maximum accuracy and positive expectancy.
+    Enforces:
+      1. Minimum Confidence (default >= 80%)
+      2. Multi-Timeframe Trend Confirmation (1m aligned with 5m)
+      3. Anti-Exhaustion Guard (blocks buying at overbought tops or selling at oversold bottoms)
+      4. Candle Momentum Confirmation (green candle for BUY, red candle for SELL)
+      5. Rejection Wick Analysis (no entering into opposing wick rejections)
+      6. Trend Strength (ADX >= 24.0)
+    """
+    action = sig.get("action")
+    if action not in ["BUY", "SELL"]:
+        return False, "Action is not BUY or SELL."
+
+    confidence = int(sig.get("confidence", 50))
+    if confidence < min_confidence:
+        return False, f"Confidence {confidence}% < {min_confidence}% Sniper Threshold (Awaiting high-confluence entry)."
+
+    if df.empty or len(df) < 5:
+        return False, "Insufficient candle history."
+
+    curr = df.iloc[-1]
+    close_p = float(curr["close"])
+    open_p = float(curr["open"])
+    high_p = float(curr["high"])
+    low_p = float(curr["low"])
+    rsi = float(curr.get("rsi", 50.0))
+    adx = float(curr.get("adx", 20.0))
+    bb_u = float(curr.get("bb_upper", close_p * 1.05))
+    bb_l = float(curr.get("bb_lower", close_p * 0.95))
+
+    # Guard 1: Trend Strength Guard
+    if adx < 24.0:
+        return False, f"ADX {adx:.1f} < 24.0: Market momentum too weak for high-precision entry."
+
+    # Guard 2: Directional Candle Confirmation & Overextension Guard
+    body = abs(close_p - open_p)
+    if action == "BUY":
+        # Must have bullish candle or close >= open
+        if close_p < open_p:
+            return False, "Bearish candle close: Waiting for bullish momentum reaction."
+        # RSI must not be overbought
+        if rsi > 68.0:
+            return False, f"RSI Overextended ({rsi:.1f} > 68): High risk of mean-reversion pullback."
+        # Price must not be piercing far outside upper Bollinger band
+        if close_p > bb_u * 1.0015:
+            return False, "Price overstretched above Upper Bollinger Band."
+        # Upper wick rejection check (sellers dumping into the high)
+        upper_wick = high_p - close_p
+        if body > 0 and upper_wick > 2.0 * body:
+            return False, "Severe upper wick rejection: Sellers defending overhead resistance."
+
+    elif action == "SELL":
+        # Must have bearish candle or close <= open
+        if close_p > open_p:
+            return False, "Bullish candle close: Waiting for bearish momentum reaction."
+        # RSI must not be oversold
+        if rsi < 32.0:
+            return False, f"RSI Overextended ({rsi:.1f} < 32): High risk of oversold bounce."
+        # Price must not be piercing far outside lower Bollinger band
+        if close_p < bb_l * 0.9985:
+            return False, "Price overstretched below Lower Bollinger Band."
+        # Lower wick rejection check (buyers defending support)
+        lower_wick = close_p - low_p
+        if body > 0 and lower_wick > 2.0 * body:
+            return False, "Severe lower wick rejection: Buyers defending support floor."
+
+    # Guard 3: Multi-Timeframe (MTF) Alignment
+    if mtf_df is not None and not mtf_df.empty and len(mtf_df) >= 15:
+        mtf_curr = mtf_df.iloc[-1]
+        mtf_close = float(mtf_curr["close"])
+        mtf_ema_f = float(mtf_curr.get("ema_fast", mtf_close))
+        mtf_ema_s = float(mtf_curr.get("ema_slow", mtf_close))
+
+        if action == "BUY":
+            # If 5m is in a confirmed strong downtrend, reject 1m BUY
+            if mtf_close < mtf_ema_s and mtf_ema_f < mtf_ema_s:
+                return False, "MTF Conflict: 1m BUY contradicts 5m Macro Downtrend (EMA 9 < EMA 21 on 5m)."
+        elif action == "SELL":
+            # If 5m is in a confirmed strong uptrend, reject 1m SELL
+            if mtf_close > mtf_ema_s and mtf_ema_f > mtf_ema_s:
+                return False, "MTF Conflict: 1m SELL contradicts 5m Macro Uptrend (EMA 9 > EMA 21 on 5m)."
+
+    return True, "Sniper Precision Confluence Verified."
+

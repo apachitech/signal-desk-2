@@ -359,6 +359,8 @@ class MultiAccountTrader:
     """
     def __init__(self):
         self.enabled: bool = os.getenv("PO_AUTO_TRADE_ENABLED", "true").lower() in ("true", "1")
+        self.sniper_precision_mode: bool = os.getenv("PO_SNIPER_PRECISION", "true").lower() in ("true", "1")
+        self.min_confidence: int = int(os.getenv("PO_MIN_CONFIDENCE", "80"))
         self.accounts: Dict[str, PocketAccount] = {}
         self.load_accounts()
 
