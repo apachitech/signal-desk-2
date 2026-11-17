@@ -2113,6 +2113,326 @@ function setupEventListeners() {
         });
     }
 
+    // ================= MULTI-ACCOUNT COPY-TRADER MANAGER =================
+    const accountsModal = document.getElementById('accountsModal');
+    const openAccountsModalBtn = document.getElementById('openAccountsModalBtn');
+    const closeAccountsModalBtn = document.getElementById('closeAccountsModalBtn');
+    const sideNavAccountsBtn = document.getElementById('sideNavAccountsBtn');
+    const accountsCountBadge = document.getElementById('accountsCountBadge');
+    const sideNavAccountsCount = document.getElementById('sideNavAccountsCount');
+    const accountsSummaryCount = document.getElementById('accountsSummaryCount');
+    const accountsCardsList = document.getElementById('accountsCardsList');
+    const showAddAccountFormBtn = document.getElementById('showAddAccountFormBtn');
+    const accountFormContainer = document.getElementById('accountFormContainer');
+    const accountEditorForm = document.getElementById('accountEditorForm');
+    const cancelAccountFormBtn = document.getElementById('cancelAccountFormBtn');
+    const closeAccountFormBtn = document.getElementById('closeAccountFormBtn');
+    const accountFormTitle = document.getElementById('accountFormTitle');
+    const editAccountId = document.getElementById('editAccountId');
+
+    let cachedAccounts = [];
+
+    const openAccountsModal = () => {
+        if (accountsModal) accountsModal.classList.remove('hidden');
+        if (sideMenuDrawer) sideMenuDrawer.classList.remove('open');
+        fetchAccountsList();
+    };
+
+    const closeAccountsModal = () => {
+        if (accountsModal) accountsModal.classList.add('hidden');
+        if (accountFormContainer) accountFormContainer.classList.add('hidden');
+    };
+
+    if (openAccountsModalBtn) openAccountsModalBtn.addEventListener('click', openAccountsModal);
+    if (sideNavAccountsBtn) sideNavAccountsBtn.addEventListener('click', openAccountsModal);
+    if (closeAccountsModalBtn) closeAccountsModalBtn.addEventListener('click', closeAccountsModal);
+
+    if (accountsModal) {
+        accountsModal.addEventListener('click', (e) => {
+            if (e.target === accountsModal) closeAccountsModal();
+        });
+    }
+
+    if (showAddAccountFormBtn) {
+        showAddAccountFormBtn.addEventListener('click', () => {
+            if (accountEditorForm) accountEditorForm.reset();
+            if (editAccountId) editAccountId.value = '';
+            if (accountFormTitle) accountFormTitle.textContent = 'Add New Trading Account';
+            const sessionInput = document.getElementById('accFormSession');
+            if (sessionInput) sessionInput.placeholder = 'a:4:{s:10:"session_id";s:32:"...";...}...';
+            if (accountFormContainer) accountFormContainer.classList.remove('hidden');
+            accountFormContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
+    if (cancelAccountFormBtn) {
+        cancelAccountFormBtn.addEventListener('click', () => {
+            if (accountFormContainer) accountFormContainer.classList.add('hidden');
+        });
+    }
+    if (closeAccountFormBtn) {
+        closeAccountFormBtn.addEventListener('click', () => {
+            if (accountFormContainer) accountFormContainer.classList.add('hidden');
+        });
+    }
+
+    const fetchAccountsList = async () => {
+        try {
+            const res = await fetch('/api/autotrade/accounts');
+            if (res.ok) {
+                const data = await res.json();
+                cachedAccounts = data.accounts || [];
+                renderAccountsList(cachedAccounts, data.active_accounts);
+            }
+        } catch (e) {
+            console.error('Failed to fetch accounts:', e);
+        }
+    };
+
+    const renderAccountsList = (accounts, activeCount) => {
+        const count = accounts.length;
+        if (accountsCountBadge) accountsCountBadge.textContent = count;
+        if (sideNavAccountsCount) sideNavAccountsCount.textContent = `${activeCount || count} ACTIVE`;
+        if (accountsSummaryCount) accountsSummaryCount.textContent = `${count} Account${count === 1 ? '' : 's'} Configured (${activeCount || 0} Copying Live)`;
+
+        if (!accountsCardsList) return;
+        if (accounts.length === 0) {
+            accountsCardsList.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    No trading accounts registered. Click <strong>Add Trading Account</strong> to connect your first Pocket Option account.
+                </div>
+            `;
+            return;
+        }
+
+        accountsCardsList.innerHTML = accounts.map(acc => {
+            const isConn = acc.connected;
+            const hasError = !!acc.auth_error;
+            const isCircuitBroken = acc.session_stats?.circuit_broken;
+            
+            let statusClass = isConn ? 'status-connected' : 'status-disconnected';
+            let dotClass = isConn ? 'connected' : '';
+            if (hasError) {
+                statusClass = 'status-error';
+                dotClass = 'error';
+            } else if (isCircuitBroken) {
+                statusClass = 'status-circuit-broken';
+            }
+
+            const pnl = acc.session_stats?.daily_pnl || 0.0;
+            const pnlClass = pnl > 0 ? 'profit' : (pnl < 0 ? 'loss' : '');
+            const pnlSign = pnl > 0 ? '+' : '';
+            const statusText = hasError 
+                ? `Auth Error: ${acc.auth_error}` 
+                : (isCircuitBroken ? `Circuit Locked: ${acc.session_stats?.circuit_reason}` : (isConn ? 'Connected & Live' : 'Disconnected (Ready)'));
+
+            return `
+                <div class="account-card-item ${statusClass}" data-acc-id="${acc.id}">
+                    <div class="account-card-header">
+                        <div class="account-title-group">
+                            <span class="account-status-dot-sm ${dotClass}" title="${isConn ? 'Connected' : 'Disconnected'}"></span>
+                            <span class="account-name-text">${acc.name}</span>
+                            <span class="account-mode-tag ${acc.is_demo ? '' : 'real'}">${acc.is_demo ? 'DEMO' : 'REAL'}</span>
+                        </div>
+                        <div class="account-switch-wrapper">
+                            <span class="account-switch-label">${acc.enabled ? 'ACTIVE' : 'MUTED'}</span>
+                            <div class="switch">
+                                <input type="checkbox" class="acc-toggle-switch" data-id="${acc.id}" ${acc.enabled ? 'checked' : ''}>
+                                <span class="slider round"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="account-metrics-row">
+                        <div class="account-metric-item">
+                            <span class="account-metric-label">UID</span>
+                            <span class="account-metric-value mono">${acc.uid}</span>
+                        </div>
+                        <div class="account-metric-item">
+                            <span class="account-metric-label">Stake</span>
+                            <span class="account-metric-value mono">$${acc.stake_amount.toFixed(2)}</span>
+                        </div>
+                        <div class="account-metric-item">
+                            <span class="account-metric-label">Today P&L</span>
+                            <span class="account-metric-value mono ${pnlClass}">${pnlSign}$${pnl.toFixed(2)}</span>
+                        </div>
+                        <div class="account-metric-item">
+                            <span class="account-metric-label">Trades (W/L)</span>
+                            <span class="account-metric-value mono">${acc.session_stats?.wins || 0}W / ${acc.session_stats?.losses || 0}L</span>
+                        </div>
+                        <div class="account-metric-item">
+                            <span class="account-metric-label">Stop Loss</span>
+                            <span class="account-metric-value mono">-$${acc.max_daily_loss.toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <div class="account-card-footer">
+                        <span class="account-status-msg ${hasError ? 'error-text' : ''}" title="${statusText}">
+                            ${statusText}
+                        </span>
+                        <div class="account-card-actions">
+                            <button type="button" class="btn-acc-action btn-acc-test" data-id="${acc.id}">⚡ Test</button>
+                            <button type="button" class="btn-acc-action btn-acc-edit" data-id="${acc.id}">✏️ Edit</button>
+                            ${acc.id !== 'acc_primary' ? `<button type="button" class="btn-acc-action btn-del btn-acc-del" data-id="${acc.id}">🗑️</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Wire event listeners on dynamic card buttons
+        accountsCardsList.querySelectorAll('.acc-toggle-switch').forEach(sw => {
+            sw.addEventListener('change', async (e) => {
+                const accId = e.target.dataset.id;
+                try {
+                    await fetch(`/api/autotrade/accounts/${accId}/toggle`, { method: 'POST' });
+                    fetchAccountsList();
+                } catch (err) {}
+            });
+        });
+
+        accountsCardsList.querySelectorAll('.btn-acc-test').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const accId = e.currentTarget.dataset.id;
+                btn.textContent = '⏳ Testing...';
+                try {
+                    const res = await fetch(`/api/autotrade/accounts/${accId}/test-connect`, { method: 'POST' });
+                    const result = await res.json();
+                    if (result.connected) {
+                        btn.textContent = '✅ Connected';
+                        setTimeout(() => fetchAccountsList(), 1000);
+                    } else {
+                        btn.textContent = '❌ Failed';
+                        alert(`Connection Failed for ${result.account_name}:\n\n${result.auth_error || 'Pocket Option server rejected the authentication packet.'}`);
+                        setTimeout(() => fetchAccountsList(), 1500);
+                    }
+                } catch (err) {
+                    btn.textContent = '❌ Error';
+                    setTimeout(() => fetchAccountsList(), 1500);
+                }
+            });
+        });
+
+        accountsCardsList.querySelectorAll('.btn-acc-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const accId = e.currentTarget.dataset.id;
+                const acc = cachedAccounts.find(a => a.id === accId);
+                if (!acc) return;
+
+                if (editAccountId) editAccountId.value = acc.id;
+                if (accountFormTitle) accountFormTitle.textContent = `Edit Account: ${acc.name}`;
+                document.getElementById('accFormName').value = acc.name;
+                document.getElementById('accFormUid').value = acc.uid;
+                document.getElementById('accFormMode').value = acc.is_demo ? 'demo' : 'real';
+                document.getElementById('accFormStake').value = acc.stake_amount;
+                document.getElementById('accFormDailyLoss').value = acc.max_daily_loss;
+                document.getElementById('accFormDailyProfit').value = acc.max_daily_profit;
+                const sessInput = document.getElementById('accFormSession');
+                sessInput.value = '';
+                sessInput.placeholder = 'Leave blank to keep existing signed session ID';
+                sessInput.required = false;
+
+                if (accountFormContainer) {
+                    accountFormContainer.classList.remove('hidden');
+                    accountFormContainer.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        accountsCardsList.querySelectorAll('.btn-acc-del').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const accId = e.currentTarget.dataset.id;
+                const acc = cachedAccounts.find(a => a.id === accId);
+                const name = acc ? acc.name : 'this account';
+                if (!confirm(`Are you sure you want to delete ${name}?`)) return;
+
+                try {
+                    const res = await fetch(`/api/autotrade/accounts/${accId}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        fetchAccountsList();
+                    }
+                } catch (err) {}
+            });
+        });
+    };
+
+    if (accountEditorForm) {
+        accountEditorForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const accId = editAccountId.value;
+            const name = document.getElementById('accFormName').value.trim();
+            const uid = parseInt(document.getElementById('accFormUid').value.trim(), 10);
+            const mode = document.getElementById('accFormMode').value;
+            const isDemo = mode === 'demo';
+            const stake = parseFloat(document.getElementById('accFormStake').value);
+            const session = document.getElementById('accFormSession').value.trim();
+            const dailyLoss = parseFloat(document.getElementById('accFormDailyLoss').value);
+            const dailyProfit = parseFloat(document.getElementById('accFormDailyProfit').value);
+
+            try {
+                if (accId) {
+                    // Update existing
+                    const payload = {
+                        name,
+                        uid,
+                        is_demo: isDemo,
+                        stake_amount: stake,
+                        max_daily_loss: dailyLoss,
+                        max_daily_profit: dailyProfit
+                    };
+                    if (session) payload.session_id = session;
+
+                    const res = await fetch(`/api/autotrade/accounts/${accId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        accountFormContainer.classList.add('hidden');
+                        fetchAccountsList();
+                    } else {
+                        const err = await res.json();
+                        alert(`Update failed: ${err.detail || 'Server error'}`);
+                    }
+                } else {
+                    // Create new
+                    if (!session) {
+                        alert('Please provide the signed session ID cookie string.');
+                        return;
+                    }
+                    const payload = {
+                        name,
+                        uid,
+                        session_id: session,
+                        is_demo: isDemo,
+                        stake_amount: stake,
+                        max_daily_loss: dailyLoss,
+                        max_daily_profit: dailyProfit,
+                        enabled: true
+                    };
+                    const res = await fetch('/api/autotrade/accounts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        accountFormContainer.classList.add('hidden');
+                        fetchAccountsList();
+                    } else {
+                        const err = await res.json();
+                        alert(`Failed to add account: ${err.detail || 'Server error'}`);
+                    }
+                }
+            } catch (err) {
+                alert(`Error saving account: ${err}`);
+            }
+        });
+    }
+
+    // Initial load of accounts
+    fetchAccountsList();
+    setInterval(fetchAccountsList, 15000);
+
     fetchAutoTradeStatus();
 }
 

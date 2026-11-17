@@ -39,6 +39,7 @@ venv.bak/
 .env.local
 .env.*.local
 !.env.example
+config/accounts.json
 
 # IDE & Editor files
 .vscode/

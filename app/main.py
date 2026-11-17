@@ -73,18 +73,21 @@ async def background_market_scanner():
                                     expiry_label=sig.get("expiry_label", f"{tf} Expiry")
                                 )
 
-                            # 2. Automated Pocket Option Execution (If enabled by user)
+                            # 2. Automated Pocket Option Execution (Across all enabled accounts in parallel)
                             if pocket_trader.enabled and _SENT_ALERTS.get(alert_key + ":po_trade") != last_candle_time:
                                 expiry_sec = 60 if tf == "1m" else 300
-                                trade_res = await pocket_trader.open_trade(
+                                trade_results = await pocket_trader.open_trade_all(
                                     asset=asset,
                                     action=action,
                                     expiry_seconds=expiry_sec
                                 )
-                                if trade_res.get("success"):
+                                successful = [r for r in trade_results if r.get("success")]
+                                if successful:
                                     _SENT_ALERTS[alert_key + ":po_trade"] = last_candle_time
-                                    mode_str = "DEMO" if pocket_trader.is_demo else "REAL"
-                                    print(f"[*] AUTO-TRADE EXECUTED: {action} on {asset} ({mode_str} balance, ${pocket_trader.stake_amount:.2f})")
+                                    summary_lines = []
+                                    for r in successful:
+                                        summary_lines.append(f"• {r.get('account_name', 'Account')}: ${r.get('amount', 1.0):.2f}")
+                                    print(f"[*] AUTO-TRADE EXECUTED on {len(successful)} account(s): {action} on {asset}")
                                     if telegram_bot.enabled:
                                         await telegram_bot.send_signal(
                                             asset=asset,
@@ -93,14 +96,14 @@ async def background_market_scanner():
                                             entry_price=sig.get("latest_price", 0.0),
                                             optimal_zone="--",
                                             adx=float(sig.get("indicators", {}).get("adx", 20.0)),
-                                            reason=f"🤖 AUTO-EXECUTED on Pocket Option ({mode_str} Account, ${pocket_trader.stake_amount:.2f}).",
+                                            reason=f"🤖 AUTO-EXECUTED on {len(successful)} Account(s):\n" + "\n".join(summary_lines),
                                             expiry_label=f"{tf} Duration"
                                         )
                                 else:
-                                    fail_reason = trade_res.get("reason", "Unknown block")
-                                    print(f"[!] AUTO-TRADE BLOCKED on {asset}: {fail_reason}")
-                                    if telegram_bot.enabled and "Pacing Cooldown" not in fail_reason:
-                                        # Only notify for actual failures or risk locks (not temporary pacing intervals)
+                                    fail_reasons = [f"{r.get('account_name', 'Acc')}: {r.get('reason', 'Blocked')}" for r in trade_results]
+                                    combined_reasons = "; ".join(fail_reasons)
+                                    print(f"[!] AUTO-TRADE BLOCKED on {asset}: {combined_reasons}")
+                                    if telegram_bot.enabled and not any("Pacing Cooldown" in r.get("reason", "") for r in trade_results):
                                         await telegram_bot.send_signal(
                                             asset=asset,
                                             timeframe=tf,
@@ -108,7 +111,7 @@ async def background_market_scanner():
                                             entry_price=sig.get("latest_price", 0.0),
                                             optimal_zone="--",
                                             adx=float(sig.get("indicators", {}).get("adx", 20.0)),
-                                            reason=f"⚠️ AUTO-TRADE SKIPPED: {fail_reason}",
+                                            reason=f"⚠️ AUTO-TRADE SKIPPED:\n" + "\n".join(fail_reasons),
                                             expiry_label="Risk Guard Active"
                                         )
                     except Exception as scan_err:
@@ -129,6 +132,11 @@ async def on_startup():
         await start_live_feeds()
     except Exception as e:
         print(f"Warning: could not start background WebSocket feeds: {e}")
+
+    try:
+        await pocket_trader.connect_all()
+    except Exception as e:
+        print(f"Warning: could not connect Pocket Option trading accounts: {e}")
 
     try:
         _SCANNER_TASK = asyncio.create_task(background_market_scanner())
@@ -393,6 +401,121 @@ async def update_autotrade_config(cfg: AutoTradeConfigRequest):
         "is_demo": pocket_trader.is_demo,
         "stake_amount": pocket_trader.stake_amount,
         "message": f"Auto-trading {'ENABLED' if pocket_trader.enabled else 'DISABLED'} (Mode: {'DEMO' if pocket_trader.is_demo else 'REAL'}, Stake: ${pocket_trader.stake_amount:.2f})"
+    }
+
+
+# ================= Multi-Account Copy-Trading API Endpoints =================
+
+@app.get("/api/autotrade/accounts")
+async def get_autotrade_accounts():
+    """Returns all configured trading accounts, their connection statuses and session stats."""
+    pocket_trader.clean_expired_deals()
+    return {
+        "master_enabled": pocket_trader.enabled,
+        "total_accounts": len(pocket_trader.accounts),
+        "active_accounts": len([a for a in pocket_trader.accounts.values() if a.enabled]),
+        "accounts": pocket_trader.get_accounts_list()
+    }
+
+
+class AccountCreateRequest(BaseModel):
+    name: str
+    uid: int
+    session_id: str
+    is_demo: bool = True
+    stake_amount: float = 1.0
+    max_daily_loss: float = 5.0
+    max_daily_profit: float = 10.0
+    max_consecutive_losses: int = 3
+    max_concurrent_trades: int = 2
+    trade_cooldown_seconds: float = 30.0
+    enabled: bool = True
+
+
+@app.post("/api/autotrade/accounts")
+async def create_autotrade_account(data: AccountCreateRequest):
+    """Add a new trading account to the multi-account manager."""
+    acc = pocket_trader.add_account(data.dict())
+    asyncio.create_task(acc.connect())
+    return {
+        "success": True,
+        "account": acc.to_dict(mask_session=True),
+        "message": f"Account '{acc.name}' registered successfully."
+    }
+
+
+class AccountUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    uid: Optional[int] = None
+    session_id: Optional[str] = None
+    is_demo: Optional[bool] = None
+    stake_amount: Optional[float] = None
+    max_daily_loss: Optional[float] = None
+    max_daily_profit: Optional[float] = None
+    max_consecutive_losses: Optional[int] = None
+    max_concurrent_trades: Optional[int] = None
+    trade_cooldown_seconds: Optional[float] = None
+    enabled: Optional[bool] = None
+
+
+@app.put("/api/autotrade/accounts/{acc_id}")
+async def update_autotrade_account(acc_id: str, data: AccountUpdateRequest):
+    """Update settings for an existing account."""
+    acc = pocket_trader.update_account(acc_id, {k: v for k, v in data.dict().items() if v is not None})
+    if not acc:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return {
+        "success": True,
+        "account": acc.to_dict(mask_session=True),
+        "message": f"Account '{acc.name}' updated."
+    }
+
+
+@app.delete("/api/autotrade/accounts/{acc_id}")
+async def delete_autotrade_account(acc_id: str):
+    """Remove a trading account."""
+    if acc_id == "acc_primary" and len(pocket_trader.accounts) <= 1:
+        raise HTTPException(status_code=400, detail="Cannot delete the sole primary account.")
+    deleted = pocket_trader.delete_account(acc_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return {"success": True, "message": "Account removed."}
+
+
+@app.post("/api/autotrade/accounts/{acc_id}/test-connect")
+async def test_account_connection(acc_id: str):
+    """Test connection for a specific account."""
+    acc = pocket_trader.accounts.get(acc_id)
+    if not acc:
+        raise HTTPException(status_code=404, detail="Account not found")
+    acc.connected = False
+    ok = await acc.connect()
+    return {
+        "success": ok,
+        "account_id": acc.id,
+        "account_name": acc.name,
+        "connected": ok,
+        "is_demo": acc.is_demo,
+        "gateway": acc.ws_url,
+        "auth_error": acc.auth_error
+    }
+
+
+@app.post("/api/autotrade/accounts/{acc_id}/toggle")
+async def toggle_account(acc_id: str):
+    """Toggle enabled/disabled state for a specific account."""
+    acc = pocket_trader.accounts.get(acc_id)
+    if not acc:
+        raise HTTPException(status_code=404, detail="Account not found")
+    acc.enabled = not acc.enabled
+    pocket_trader.save_accounts()
+    if acc.enabled and not acc.connected:
+        asyncio.create_task(acc.connect())
+    return {
+        "success": True,
+        "account_id": acc.id,
+        "enabled": acc.enabled,
+        "message": f"Account '{acc.name}' is now {'ENABLED' if acc.enabled else 'DISABLED'}."
     }
 
 

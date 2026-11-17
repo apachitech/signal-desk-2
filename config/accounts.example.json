@@ -1,0 +1,16 @@
+[
+  {
+    "id": "acc_primary",
+    "name": "Primary Account",
+    "uid": 142203876,
+    "session_id": "a:4:{s:10:\"session_id\";s:32:\"...\";...}...",
+    "is_demo": false,
+    "stake_amount": 1.0,
+    "max_daily_loss": 5.0,
+    "max_daily_profit": 10.0,
+    "max_consecutive_losses": 3,
+    "max_concurrent_trades": 2,
+    "trade_cooldown_seconds": 30.0,
+    "enabled": true
+  }
+]
